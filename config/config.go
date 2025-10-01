@@ -7,14 +7,14 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Port           string
-	ScrapeInterval time.Duration
-	TRHURL         string
-	LiquidURL      string
-	CDUURLs        []string
-	SessMap        string
-	PHPSessID      string
-	Referer        string
+	Port             string
+	ScrapeInterval   time.Duration
+	TRHURL           string
+	LiquidCoolingURL string
+	CDUURLs          []string
+	SessMap          string
+	PHPSessID        string
+	Referer          string
 }
 
 // Load loads configuration from environment variables
@@ -27,10 +27,10 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		Port:           port,
-		ScrapeInterval: scrapeInterval,
-		TRHURL:         getEnv("TRH_URL", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
-		LiquidURL:      getEnv("LIQUID_URL", "https://app.managed360view.com/360view/liquid_cooling_overview.php"),
+		Port:             port,
+		ScrapeInterval:   scrapeInterval,
+		TRHURL:           getEnv("TRH_URL", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
+		LiquidCoolingURL: getEnv("LIQUID_URL", "https://app.managed360view.com/360view/liquid_cooling_overview.php"),
 		CDUURLs: []string{
 			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329", // CDU 1.1
 			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337", // CDU 1.2

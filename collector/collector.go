@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -96,7 +95,7 @@ func (c *Collector) Collect() {
 	}
 
 	// Collect liquid cooling data
-	if err := c.collectLiquid(); err != nil {
+	if err := c.collectLiquidCooling(); err != nil {
 		log.Printf("Failed to collect liquid data: %v", err)
 	} else {
 		log.Println("Successfully collected liquid data")
@@ -185,10 +184,9 @@ func (c *Collector) collectCDU() error {
 		// Set alarm data
 		alarmCount := 0
 		for _, alarm := range alarms {
-			// Normalize item name for Prometheus
-			item := strings.ReplaceAll(alarm.Item, " ", "_")
-			item = strings.ReplaceAll(item, "-", "_")
-			status := strings.ToLower(alarm.Status)
+			// Item and status are already normalized in scraper
+			item := alarm.Item
+			status := alarm.Status
 			cduGauge.WithLabelValues(name, "alarm", item, status, "").Set(1)
 			alarmCount++
 			log.Printf("CDU Alarm - %s (%s): %s (%s)", name, alarm.Item, alarm.Status, status)
@@ -197,16 +195,10 @@ func (c *Collector) collectCDU() error {
 		// Set parameter data
 		paramCount := 0
 		for _, param := range params {
-			// Normalize item name
-			item := strings.ReplaceAll(param.Item, " ", "_")
-			item = strings.ReplaceAll(item, "-", "_")
-			// Normalize unit
-			unit := strings.ToLower(param.Unit)
-			if unit == "°c" {
-				unit = "celsius"
-			} else if unit == "%rh" {
-				unit = "percent_rh"
-			}
+			// Item is already normalized in scraper
+			item := param.Item
+			// Use unit as is
+			unit := param.Unit
 			cduGauge.WithLabelValues(name, "parameter", item, "normal", unit).Set(param.Value)
 			paramCount++
 			log.Printf("CDU Parameter - %s (%s): %.2f %s", name, param.Item, param.Value, param.Unit)
@@ -226,13 +218,13 @@ func (c *Collector) collectCDU() error {
 	return nil
 }
 
-// collectLiquid collects liquid cooling data
-func (c *Collector) collectLiquid() error {
+// collectLiquidCooling collects liquid cooling data
+func (c *Collector) collectLiquidCooling() error {
 	// Reset gauges
 	liquidGauge.Reset()
 	liquidRackGauge.Reset()
 
-	cdus, racks, err := scraper.ScrapeLiquid(c.config.LiquidURL, c.config.SessMap, c.config.PHPSessID)
+	cdus, racks, err := scraper.ScrapeLiquidCooling(c.config.LiquidCoolingURL, c.config.SessMap, c.config.PHPSessID)
 	if err != nil {
 		return fmt.Errorf("failed to scrape liquid data: %w", err)
 	}

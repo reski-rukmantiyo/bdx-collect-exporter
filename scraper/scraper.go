@@ -151,8 +151,8 @@ func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
 		if strings.Contains(row, "<td") && strings.Contains(row, "td-detail") {
 			cells := strings.Split(row, "<td")
 			if len(cells) >= 3 {
-				item := extractText(cells[1])
-				status := extractText(cells[2])
+				item := normalizeItem(extractText(cells[1]))
+				status := strings.ToLower(extractText(cells[2]))
 				if item != "" && status != "" {
 					alarms = append(alarms, CDUAlarm{Item: item, Status: status})
 				}
@@ -187,7 +187,7 @@ func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
 		if strings.Contains(row, "<td") && strings.Contains(row, "td-detail") {
 			cells := strings.Split(row, "<td")
 			if len(cells) >= 4 {
-				item := extractText(cells[1])
+				item := normalizeItem(extractText(cells[1]))
 				valueStr := extractText(cells[2])
 				unit := extractText(cells[3])
 				if item != "" && valueStr != "" {
@@ -203,8 +203,8 @@ func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
 	return name, alarms, params
 }
 
-// ScrapeLiquid scrapes liquid cooling data from the overview page
-func ScrapeLiquid(url, sessMap, phpSessID string) ([]LiquidCDU, []LiquidRack, error) {
+// ScrapeLiquidCooling scrapes liquid cooling data from the overview page
+func ScrapeLiquidCooling(url, sessMap, phpSessID string) ([]LiquidCDU, []LiquidRack, error) {
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -275,7 +275,7 @@ func parseLiquidHTML(html string) ([]LiquidCDU, []LiquidRack) {
 		if len(match) < 2 {
 			continue
 		}
-		cduName := "CDU_" + strings.ReplaceAll(match[1], ".", "_")
+		cduName := "CDU_" + match[1]
 
 		// Find the table start after the header
 		headerIndex := strings.Index(html, match[0])
@@ -362,34 +362,43 @@ func parseCDUTable(tableHTML, cduName string) LiquidCDU {
 			continue
 		}
 
-		// Extract label and value
-		label := extractText(cells[1])
-		valueStr := extractText(cells[2])
+		// Extract label-value pairs
+		for i := 1; i < len(cells); i += 2 {
+			if i+1 >= len(cells) {
+				break
+			}
+			label := extractText(cells[i])
+			valueStr := extractText(cells[i+1])
 
-		// Normalize units
-		valueStr = strings.ReplaceAll(valueStr, "I/min", "l/min")
-		valueStr = strings.ReplaceAll(valueStr, "°C", "C")
+			if label == "" || valueStr == "" {
+				continue
+			}
 
-		value, err := strconv.ParseFloat(strings.Fields(valueStr)[0], 64)
-		if err != nil {
-			continue
-		}
+			// Normalize units
+			valueStr = strings.ReplaceAll(valueStr, "I/min", "l/min")
+			valueStr = strings.ReplaceAll(valueStr, "°C", "C")
 
-		switch strings.ToLower(strings.ReplaceAll(label, " ", "_")) {
-		case "cdu_cooling":
-			cdu.Status = value
-		case "fws_flow":
-			cdu.FWSFlow = value
-		case "fws_temp_sup":
-			cdu.FWSTempSup = value
-		case "fws_temp_ret":
-			cdu.FWSTempRet = value
-		case "tcs_flow":
-			cdu.TCSFlow = value
-		case "tcs_temp_sup":
-			cdu.TCSTempSup = value
-		case "tcs_temp_ret":
-			cdu.TCSTempRet = value
+			value, err := strconv.ParseFloat(strings.Fields(valueStr)[0], 64)
+			if err != nil {
+				continue
+			}
+
+			switch strings.ToLower(strings.ReplaceAll(label, " ", "_")) {
+			case "cdu_cooling":
+				cdu.Status = value
+			case "fws_flow":
+				cdu.FWSFlow = value
+			case "fws_temp_sup":
+				cdu.FWSTempSup = value
+			case "fws_temp_ret":
+				cdu.FWSTempRet = value
+			case "tcs_flow":
+				cdu.TCSFlow = value
+			case "tcs_temp_sup":
+				cdu.TCSTempSup = value
+			case "tcs_temp_ret":
+				cdu.TCSTempRet = value
+			}
 		}
 	}
 
@@ -502,16 +511,26 @@ func parseRackTable(tableHTML, compartment string) []LiquidRack {
 
 // extractText extracts text from HTML cell
 func extractText(cell string) string {
-	// Remove HTML tags and attributes
-	start := strings.Index(cell, ">")
-	if start == -1 {
-		return ""
-	}
-	text := cell[start+1:]
-	text = strings.ReplaceAll(text, "</td>", "")
-	text = strings.ReplaceAll(text, "</th>", "")
-	text = strings.ReplaceAll(text, "<b>", "")
-	text = strings.ReplaceAll(text, "</b>", "")
-	text = strings.TrimSpace(text)
-	return text
+    // Remove HTML tags and attributes
+    start := strings.Index(cell, ">")
+    if start == -1 {
+        return ""
+    }
+    text := cell[start+1:]
+    // Remove all remaining HTML tags
+    text = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(text, "")
+    text = strings.TrimSpace(text)
+    return text
+}
+
+// normalizeItem normalizes item names for Prometheus
+func normalizeItem(item string) string {
+    // Replace spaces and dashes with underscores
+    item = strings.ReplaceAll(item, " ", "_")
+    item = strings.ReplaceAll(item, "-", "_")
+    // Replace multiple underscores with single underscore
+    item = regexp.MustCompile(`_+`).ReplaceAllString(item, "_")
+    // Remove leading/trailing underscores
+    item = strings.Trim(item, "_")
+    return item
 }
