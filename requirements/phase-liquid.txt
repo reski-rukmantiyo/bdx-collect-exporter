@@ -1,0 +1,858 @@
+# Phase 1 - Liquid Cooling
+
+## Source Code
+
+```
+
+<!doctype html>
+<html>
+
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+	<link rel="shortcut icon" href="https://app.managed360view.com/360view/assets/img/favicon.ico" type="image/x-icon">
+	<title>360°View Data Center Information Management</title>
+	<!--------New added by Vipin S------->
+
+	<link href="assets/css/app.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+	<!-- <link href="assets/css/video.css" rel="stylesheet"> -->
+	<link href="assets/css/video-js.css" rel="stylesheet">
+	<link href="assets/css/modal.css" rel="stylesheet">
+
+	<style type="text/css">
+		.langselect {
+			display: none !important;
+		}
+
+
+		.border {
+			border: 0px !important;
+		}
+
+		.border1,
+		.border1 div {
+			border: 1px solid gray;
+		}
+
+		.main {
+			overflow-x: scroll !important;
+		}
+
+		div.table>div>div {
+			display: table-cell;
+			vertical-align: middle;
+			/* padding-bottom: .75em; */
+		}
+
+		div.table>div {
+			display: table;
+		}
+
+		.table {
+			display: table;
+			text-align: left;
+			border-collapse: collapse;
+		}
+
+		div.table>div {
+			display: table-caption;
+		}
+
+
+		/* scrollbar */
+		::-webkit-scrollbar {
+			width: 5px;
+			height: 5px;
+		}
+
+		::-webkit-scrollbar-track {
+			-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+			-webkit-border-radius: 10px;
+			border-radius: 10px;
+		}
+
+		::-webkit-scrollbar-thumb {
+			-webkit-border-radius: 10px;
+			border-radius: 10px;
+			background: rgba(255, 255, 255, 0.3);
+			-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+		}
+
+		::-webkit-scrollbar-thumb:window-inactive {
+			background: rgba(255, 255, 255, 0.3);
+		}
+
+		.sidebar-brand {
+			position: fixed;
+			z-index: 99;
+		}
+
+		.td-heading {
+			/* font-size: 12px; */
+			font-size: 10px;
+		}
+
+		.td-detail {
+			/* font-size: 13px; */
+			font-size: 10px;
+		}
+
+		/* @media (max-width: 1440px) {
+		.td-heading {
+			font-size: 10px;
+		}
+
+		.td-detail {
+			font-size: 11px;
+		}
+		} */
+		
+		.comp-box {
+			background:#fff; border-radius:6px; font-size:8px;
+		}
+		.comp-label {
+			background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;
+		}
+		.comp-table {
+			width:100%; border-collapse:collapse; text-align:left;
+		}
+		.comp-thead {
+			background:#072068; color:#fff; font-weight:bold; text-align:left; padding:8px 6px;border:1px solid #ffffff;
+		}
+		.td-label {
+			background-color:#71aff9;border:1px solid #ffffff;
+		}
+		.td-text {
+			background-color:#b7e4f0;border:1px solid #ffffff;
+		}
+
+	</style>
+	<!--------New added by Vipin E------->
+
+
+	<!--------<link rel="stylesheet" href="css/inventory_1.php" type="text/css">------->
+	<link rel="stylesheet" href="css/print.css" type="text/css" media="print">
+	<link rel="stylesheet" href="css/jquery-ui.css" type="text/css">
+	<script type="text/javascript" src="scripts/jquery.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="scripts/common.js?v1755773956"></script>
+	<script type="text/javascript" src="scripts/jquery.ui-contextmenu.js"></script>
+
+	<script src="assets/js/app.js"></script>
+
+	<script type="text/javascript">
+		var js_outlinecabinets = 0;
+		var js_labelcabinets = 0;
+	</script>
+	<!--[if lte IE 8]>
+		<link rel="stylesheet"  href="css/ie.css" type="text/css">
+				<script src="scripts/excanvas.js"></script>
+	<![endif]-->
+</head>
+
+<body>
+	<div class="wrapper">
+		<nav id="sidebar" class="sidebar">
+			<div class="sidebar-content js-simplebar" style="height: 734px;">
+				<a class="sidebar-brand bg-primary" href="index.php">
+					<span class="align-middle"><img src="assets/img/logo.png" alt="BDx Logo" class="brand-image"></span>
+				</a>
+				<div class="sidebar-wrapper" style="margin-top: 65px;"><div id="sidebar" style="">
+	<style>
+		.simplebar-content { height:auto; }	
+	</style>
+<!-- <br>
+<form action="search.php" method="post">
+<input type="hidden" name="key" value="label"> -->
+<!-- </select> -->
+<!-- <div class="ui-icon ui-icon-close"></div> 
+</form>-->
+  <script type="text/javascript">
+	function addlookup(inputobj,lookuptype){
+		// clear any existing autocompletes
+		if(inputobj.hasClass('ui-autocomplete-input')){inputobj.autocomplete('destroy');}
+		// clear out previous search arrows
+		inputobj.next('.text-arrow').remove();
+		// Position the arrow
+		var inputpos=inputobj.position();
+		var arrow=$('<div />').addClass('text-arrow');
+		arrow.click(function(){
+			inputobj.autocomplete("search", "");
+		});
+		// add the autocomplete
+		inputobj.autocomplete({
+			minLength: 0,
+			delay: 600,
+			autoFocus: true,
+			source: function(req, add){
+				$.getJSON('scripts/ajax_search.php?'+lookuptype, {q: req.term}, function(data){
+					var suggestions=[];
+					$.each(data, function(i,val){
+						suggestions.push(val);
+					});
+					add(suggestions);
+				});
+			},
+			open: function(){
+				$(this).autocomplete("widget").css({'width': inputobj.width()+6+'px'});
+			}
+		}).next().after(arrow);
+		arrow.css({'top': inputpos.top+'px', 'left': inputpos.left+inputobj.width()-(arrow.width()/2)});
+	}
+	$('#advsrch, #searchadv ~ .ui-icon.ui-icon-close').click(function(){
+		var here=$(this).position();
+		$('#searchadv, #searchname').val('');
+		$('#searchadv').parents('form').height(here.top).toggle('slide',200).removeClass('hide');
+		if($('#searchadv').hasClass('ui-autocomplete-input')){$('#searchadv').autocomplete('destroy');}
+		if($(this).text()=='Advanced'){$(this).text('Basic');$('#searchadv ~ select[name="key"]').trigger('change');}else{$(this).text('Advanced');}
+	});
+	$('#customsrch').click(function(){
+		window.location="custom_search.php";
+	});
+  </script>
+  <script type="text/javascript" src="https://app.managed360view.com/360view/scripts/mktree.js"></script> 
+  <script type="text/javascript" src="https://app.managed360view.com/360view/scripts/konami.js"></script> 
+
+  <script src="https://app.managed360view.com/360view/assets/js/jquery.overlayScrollbars.min.js"></script>
+<ul class="sidebar-nav"><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>Dashboard</a><ul id='menu_1' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a href="https://app.managed360view.com/360view/alarm_dashboard.php" class="sidebar-link menu_81" onclick="checkMenu(81);"><span class="align-middle">Alarm Dashboard</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/trh_monitoring_dashboard.php" class="sidebar-link menu_83" onclick="checkMenu(83);"><span class="align-middle">Temp & RH Monitoring</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/trh_trend_dashboard.php" class="sidebar-link menu_85" onclick="checkMenu(85);"><span class="align-middle">Temp & RH Trend</span></a></li></ul></li><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>CDU Dashboard</a><ul id='menu_2' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329" class="sidebar-link menu_89" onclick="checkMenu(89);"><span class="align-middle">CDU-1.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331" class="sidebar-link menu_93" onclick="checkMenu(93);"><span class="align-middle">CDU-2.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333" class="sidebar-link menu_97" onclick="checkMenu(97);"><span class="align-middle">CDU-3.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335" class="sidebar-link menu_101" onclick="checkMenu(101);"><span class="align-middle">CDU-4.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337" class="sidebar-link menu_91" onclick="checkMenu(91);"><span class="align-middle">CDU-1.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339" class="sidebar-link menu_95" onclick="checkMenu(95);"><span class="align-middle">CDU-2.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341" class="sidebar-link menu_99" onclick="checkMenu(99);"><span class="align-middle">CDU-3.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343" class="sidebar-link menu_103" onclick="checkMenu(103);"><span class="align-middle">CDU-4.2</span></a></li></ul></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/liquid_cooling_overview.php" class="sidebar-link menu_105" onclick="checkMenu(105);"><span class="align-middle">Liquid Cooling Overview</span></a></li><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>Data Center</a><ul id='menu_4' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a class="nav-link menu_c1" onclick="checkMenu('c1');" href="https://app.managed360view.com/360view/container_stats.php?container=139" style="padding:.625rem 1.5rem .625rem 2.25rem; color:#e2e5e8;"><span class="align-middle">CGK3A</span></a><a class="sidebar-link menu_dc849" onclick="checkMenu('dc849');" href="https://app.managed360view.com/360view/dc_stats.php?dc=849"><span class="align-middle">Level 4 INF AI Cluster - Floor Layout</span></a></li></ul></li></ul>
+	
+	<div>
+	
+	<div class="langselect hide">
+		<label for="language">Language</label>
+		<select name="language" id="language" current="en_US">			<option value="ca_AD">ca_AD</option>			<option value="de_DE">de_DE</option>			<option value="en_GB">en_GB</option>			<option value="en_US" selected>en_US</option>			<option value="es_ES">es_ES</option>			<option value="fr_FR">fr_FR</option>			<option value="gl_ES">gl_ES</option>			<option value="it_IT">it_IT</option>			<option value="ja_JP">ja_JP</option>			<option value="ko_KR">ko_KR</option>			<option value="pl_PL">pl_PL</option>			<option value="pt_BR">pt_BR</option>			<option value="ru_RU">ru_RU</option>			<option value="sk_SK">sk_SK</option>			<option value="sl_SI">sl_SI</option>			<option value="uk_UA">uk_UA</option>			<option value="zh_CN">zh_CN</option>		</select>
+	</div>
+
+	<div id="nav_placeholder"></div>	</div>
+<script type="text/javascript">
+/* if (typeof jQuery == 'undefined') {
+	alert('jQuery is not loaded');
+	window.location.assign("http://BDxDCIM.org/wiki/index.php?title=Errors:Operational");
+}
+if (typeof jQuery.ui == 'undefined') {
+	alert('jQueryUI is not loaded');
+	window.location.assign("http://BDxDCIM.org/wiki/index.php?title=Errors:Operational");
+} */
+
+$("#sidebar .nav a").each(function(){
+	var loc=window.location;
+	if($(this).attr("href")=="liquid_cooling_overview.php" || $(this).attr("href")==loc.href.substr(loc.href.indexOf(loc.host)+loc.host.length+1)){
+		$(this).addClass("active");
+		$(this).parentsUntil("#ui-id-1","li").children('a:first-child').addClass("active");
+	}
+});
+$("#sidebar .nav").menu();
+
+// $('#searchname').width($('#sidebar').innerWidth() - $('#searchname ~ button').outerWidth());
+// addlookup($('#searchname'),'name');
+// $('#searchadv ~ select[name="key"]').change(function(){
+// 	addlookup($('#searchadv'),$(this).val())
+// }).outerHeight($('#searchadv').outerHeight()).outerWidth(157);
+
+// Really long cabinet / zone / dc combinations are making the screen jump around.
+// If they make this thing so big it's unusable, fuck em.
+$('#sidebar > hr ~ div').css({'width':$('#sidebar > hr ~ ul').width()+'px','overflow':'hidden'});
+
+$('.sidebar-link').click(function(){
+	if($(this).hasClass("collapsed")){
+		$(this).removeClass("collapsed");
+		$(this).attr("aria-expanded","true");
+		$(this).next('ul').addClass("show");
+
+	}else{
+		$(this).addClass("collapsed");
+		$(this).removeAttr("aria-expanded");
+		$(this).next('ul').removeClass("show");
+	}
+});
+
+function resize(){
+	// Reset widths to make shrinking screens work better
+	//$('#header,div.main,div.page').css('width','auto');
+	// This function will run each 500ms for 2.5s to account for slow loading content
+	var count=0;
+	subresize();
+	var longload=setInterval(function(){
+		subresize();
+		if(count>4){
+			clearInterval(longload);
+			window.resized=true;
+		}
+		++count;
+	},500);
+
+	function subresize(){
+		// page width is calcuated different between ie, chrome, and ff
+		$('#header').width(Math.floor($(window).outerWidth()-(16*3))); //16px = 1em per side padding
+		var widesttab=0;
+		// make all the tabs on the config page the same width
+		$('#configtabs > ul ~ div').each(function(){
+			widesttab=($(this).width()>widesttab)?$(this).width():widesttab;
+		});
+		$('#configtabs > ul ~ div').each(function(){
+			$(this).width(widesttab);
+		});
+
+		if(typeof getCookie=='function' && getCookie("layout")=="Landscape"){
+			// edge case where a ridiculously long device type can expand the field selector out too far
+			var rdivwidth=$('div.right').outerWidth();
+			$('div.right fieldset').each(function(){
+				rdivwidth=($(this).outerWidth()>rdivwidth)?$(this).outerWidth():rdivwidth;
+			});
+			// offset for being centered
+			rdivwidth=(rdivwidth>495)?(rdivwidth-495)+rdivwidth:rdivwidth;
+		}else{
+			rdivwidth=0;
+		}
+
+		var pnw=$('#pandn').outerWidth(),hw=$('#header').outerWidth(),maindiv=$('div.main').outerWidth(),
+			sbw=$('#sidebar').outerWidth(),width,mw=$('div.left').outerWidth()+rdivwidth+20,
+			main,cw=$('.main > .center').outerWidth();
+		widesttab+=58;
+
+		// find widths
+		width=(cw>mw)?cw:mw;
+		main=(pnw>width)?pnw:width; // Find the largest width of possible content in maindiv
+		main+=12; // add in padding and borders
+		width=((main+sbw)>hw)?main+sbw:hw; // find the widest point of the page
+
+		// The math just isn't adding up across browsers and FUCK IE
+		/*if((main+sbw)<width){ // page is larger than content expand main to fit
+			$('#header').outerWidth(width);
+			$('div.main').outerWidth(width-sbw-4); 
+			$('div.page').outerWidth(width);
+		}else{ // page is smaller than content expand the page to fit
+			$('div.main').width(width-sbw-12); 
+			$('#header').width(width+4);
+			$('div.page').width(width+6);
+		}*/
+
+		// If the function MoveButtons is defined run it
+		if(typeof movebuttons=='function'){
+			movebuttons();
+		}
+	}
+}
+$(document).ready(function(){
+	resize();
+	// redraw the screen if the window size changes for some reason
+	$(window).resize(function(){
+		if(this.resizeTO){ clearTimeout(this.resizeTO);}
+		this.resizeTO=setTimeout(function(){
+			resize();
+		}, 500);
+	});
+	$('#header').append($('.langselect'));
+	$(".langselect").css({"right": "3px", "z-index": "99", "position": "absolute"}).removeClass('hide').appendTo("#header");
+	$(".langselect").css({"bottom": $(".langselect").height()+"px"});
+	$("#language").change(function(){
+		$.ajax({
+			type: 'POST',
+			url: 'scripts/ajax_language.php',
+			data: 'sl='+$("#language").val(),
+			success: function(){
+				// new cookie was set. reload the page for the translation.
+				location.reload();
+			}
+		});
+	});
+	$('html, body').animate({
+		scrollTop: $(".sidebar").offset().top
+	}, 200)
+	$.get('https://app.managed360view.com/360view/scripts/ajax_navmenu.php').done(function(data){
+		$('#nav_placeholder').replaceWith(data);
+		if(document.readyState==="complete" && $('#datacenters .bullet').length==0){
+			window.convertTrees();
+		}
+	});
+});
+
+</script>
+<script>
+	var active_menu = "105";
+	if(active_menu > 0 || active_menu != ''){
+		$(".menu_"+active_menu).parent().addClass('active');
+		$(".menu_"+active_menu).parent().parent().addClass('show');
+		$(".menu_"+active_menu).parent().parent().parent().find('a:first').removeClass('collapsed');
+	}
+	function checkMenu(menuID){
+		console.log('sdsd');
+		$.ajax({
+			url : 'scripts/setMenu.php',
+			type: 'POST',
+			async:false,
+			data:{
+				ID : menuID
+			},
+			success:function(data){
+				return true;
+			}
+		});
+	}
+</script>
+</div>
+
+
+<noscript>
+	<div id="gandalf"><div></div><p>Please enable javascript to continue</p></div>
+</noscript>
+</div>
+			</div>
+		</nav>
+
+		<div class="main">
+			<nav class="navbar navbar-expand navbar-light navbar-bg">
+				
+
+<a class="sidebar-toggle d-flex">
+					<i class="hamburger align-self-center"></i>
+				</a>
+				<form action="search.php" method="post" class="d-none d-sm-inline-block" style="display:none !important;">
+					<div class="input-group input-group-navbar">
+						<input type="hidden" name="key" value="label">
+						<input type="text" class="form-control" placeholder="Search…" id="searchname" name="search" autocomplete="off">
+						<button class="btn" type="submit">
+							<i class="align-middle" data-feather="search"></i>
+						</button>
+					</div>
+				</form>
+				<div class="navbar-collapse collapse">
+					<ul class="navbar-nav navbar-align">
+						<li class="nav-item dropdown" style="display:none">
+							<a class="nav-icon dropdown-toggle" href="#" id="alertsDropdown" data-bs-toggle="dropdown">
+								<div class="position-relative">
+									<i class="align-middle" data-feather="bell"></i>
+									<span class="indicator">4</span>
+								</div>
+							</a>
+							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="alertsDropdown">
+								<div class="dropdown-menu-header">
+									4 New Notifications
+								</div>
+								<div class="list-group">
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-danger" data-feather="alert-circle"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Update completed</div>
+												<div class="text-muted small mt-1">Restart server 12 to complete the update.</div>
+												<div class="text-muted small mt-1">30m ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-warning" data-feather="bell"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Lorem ipsum</div>
+												<div class="text-muted small mt-1">Aliquam ex eros, imperdiet vulputate hendrerit et.</div>
+												<div class="text-muted small mt-1">2h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-primary" data-feather="home"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Login from 192.186.1.8</div>
+												<div class="text-muted small mt-1">5h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-success" data-feather="user-plus"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">New connection</div>
+												<div class="text-muted small mt-1">Christina accepted your request.</div>
+												<div class="text-muted small mt-1">14h ago</div>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="dropdown-menu-footer">
+									<a href="#" class="text-muted">Show all notifications</a>
+								</div>
+							</div>
+						</li>
+						<li class="nav-item dropdown" style="display:none">
+							<a class="nav-icon dropdown-toggle" href="#" id="messagesDropdown" data-bs-toggle="dropdown">
+								<div class="position-relative">
+									<i class="align-middle" data-feather="message-square"></i>
+								</div>
+							</a>
+							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="messagesDropdown">
+								<div class="dropdown-menu-header">
+									<div class="position-relative">
+										4 New Messages
+									</div>
+								</div>
+								<div class="list-group">
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-5.jpg" class="avatar img-fluid rounded-circle" alt="Vanessa Tucker">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Vanessa Tucker</div>
+												<div class="text-muted small mt-1">Nam pretium turpis et arcu. Duis arcu tortor.</div>
+												<div class="text-muted small mt-1">15m ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-2.jpg" class="avatar img-fluid rounded-circle" alt="William Harris">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">William Harris</div>
+												<div class="text-muted small mt-1">Curabitur ligula sapien euismod vitae.</div>
+												<div class="text-muted small mt-1">2h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-4.jpg" class="avatar img-fluid rounded-circle" alt="Christina Mason">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Christina Mason</div>
+												<div class="text-muted small mt-1">Pellentesque auctor neque nec urna.</div>
+												<div class="text-muted small mt-1">4h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-3.jpg" class="avatar img-fluid rounded-circle" alt="Sharon Lessman">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Sharon Lessman</div>
+												<div class="text-muted small mt-1">Aenean tellus metus, bibendum sed, posuere ac, mattis non.</div>
+												<div class="text-muted small mt-1">5h ago</div>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="dropdown-menu-footer">
+									<a href="#" class="text-muted">Show all messages</a>
+								</div>
+							</div>
+						</li><li class="nav-item dropdown">
+							<a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
+								<i class="align-middle" data-feather="settings"></i>
+							</a>
+							<a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+								<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1" alt="Charles Hall" style="display:none"/> <span class="text-dark">Ahmad Kamal</span>
+							</a>
+							<div class="dropdown-menu dropdown-menu-end">
+								<!--<a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1" data-feather="user" style="display:none"></i> Profile</a>
+								<a class="dropdown-item" href="#" style="display:none"><i class="align-middle me-1" data-feather="pie-chart"></i> Analytics</a>
+								<div class="dropdown-divider" style="display:none"></div>
+								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="help-circle" style="display:none"></i> Help Center</a>
+								<div class="dropdown-divider style="display:none""></div>--><a class="dropdown-item" href="https://app.managed360view.com/360view/login_ldap.php?logout">Log out</a></div>
+						</li>
+					</ul>
+				</div>
+			</nav>
+
+			<main class="content">
+				<div class="container-fluid p-0">
+
+					<div class="card mt-4">
+						<div class="card-header text-white bg-primary">
+							<h5 class="card-title mb-0">CGK3A - BDx - DATAHALL LEVEL 4</h5>
+						</div>
+						<div class="card-body">
+
+							<div>
+
+								<div style="position: relative; width: 1200px; height: 100%; margin: 0 auto;">
+									<!-- Table Left Top Pipeline image -->
+									<img src="assets/drawings/cgk3a-bdx-datahall-level-4-medium.png" style="width:1200px; height:100%; display:block;">
+
+									<!-- Table Left Top -->
+									<div
+										style="position: absolute;top: 18%;left: 0%;width: 38%;display: grid;grid-template-columns: repeat(2, 1fr);grid-gap: 10px;">
+
+										<!-- Table Left Top Table 1 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-4.1 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">566.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">406.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.10 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">28.80 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">31.00 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">32.90 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Left Top Table 2 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AF</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 14</th><th>RACK 13</th><th>RACK 12</th><th>RACK 11</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">54.90 kW</td><td class="td-text">54.70 kW</td><td class="td-text">23.40 kW</td><td class="td-text">62.40 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">148.70 I/min</td><td class="td-text">150.20 I/min</td><td class="td-text">149.10 I/min</td><td class="td-text">148.90 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">5.30 °C</td><td class="td-text">5.30 °C</td><td class="td-text">2.30 °C</td><td class="td-text">6.10 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">28.50 °C</td><td class="td-text">28.50 °C</td><td class="td-text">28.50 °C</td><td class="td-text">28.30 °C</td></tr></tbody></table></div>
+										<!-- Table Left Top Table 3 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-3.1 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">617.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">491.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">26.90 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">29.00 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">31.30 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">32.60 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Left Top Table 4 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AE</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 14</th><th>RACK 13</th><th>RACK 12</th><th>RACK 11</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">65.00 kW</td><td class="td-text">45.20 kW</td><td class="td-text">47.60 kW</td><td class="td-text">39.90 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">149.20 I/min</td><td class="td-text">150.50 I/min</td><td class="td-text">151.60 I/min</td><td class="td-text">148.20 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">6.30 °C</td><td class="td-text">4.30 °C</td><td class="td-text">4.50 °C</td><td class="td-text">3.90 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">30.50 °C</td><td class="td-text">29.20 °C</td><td class="td-text">29.20 °C</td><td class="td-text">29.60 °C</td></tr></tbody></table></div>
+									</div>
+
+									<!-- Table Right Top -->
+									<div
+										style="position: absolute;top: 18%;right: 0%;width: 38%;display: grid;grid-template-columns: repeat(2, 1fr);grid-gap: 10px;">
+
+										<!-- Table Right Top Table 2 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AF</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 10</th><th>RACK 9</th><th>RACK 8</th><th>RACK 7</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">35.40 kW</td><td class="td-text">24.90 kW</td><td class="td-text">0.00 kW</td><td class="td-text">0.00 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">144.80 I/min</td><td class="td-text">149.50 I/min</td><td class="td-text">0.00 I/min</td><td class="td-text">0.00 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">3.50 °C</td><td class="td-text">2.40 °C</td><td class="td-text">2.00 °C</td><td class="td-text">0.30 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">28.30 °C</td><td class="td-text">28.40 °C</td><td class="td-text">30.30 °C</td><td class="td-text">30.50 °C</td></tr></tbody></table></div>
+										<!-- Table Right Top Table 1 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-4.2 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">701.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">370.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.40 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">28.20 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">30.50 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">32.00 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Right Top Table 4 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AE</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 10</th><th>RACK 9</th><th>RACK 8</th><th>RACK 7</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">55.10 kW</td><td class="td-text">42.50 kW</td><td class="td-text">47.30 kW</td><td class="td-text">22.10 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">148.20 I/min</td><td class="td-text">118.20 I/min</td><td class="td-text">149.70 I/min</td><td class="td-text">150.00 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">5.40 °C</td><td class="td-text">5.20 °C</td><td class="td-text">4.60 °C</td><td class="td-text">2.10 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">29.20 °C</td><td class="td-text">30.50 °C</td><td class="td-text">30.60 °C</td><td class="td-text">30.50 °C</td></tr></tbody></table></div>
+										<!-- Table Right Top Table 3 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-3.2 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">581.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">512.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.40 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">30.60 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">34.10 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">34.70 °C</td></tr>																									</table>
+											</div>
+										
+									</div>
+								</div>
+
+
+								<div style="position: relative; width: 1200px; height: 100%; margin: 0 auto;">
+									<!-- Table Left Bottom Pipeline image -->
+									<img src="assets/drawings/cgk3a-bdx-datahall-level-4-medium.png" style="width:1200px; height:100%; display:block;">
+
+									<!-- Table Left Bottom -->
+									<div style="position: absolute;bottom: 37%;left: 0px;display: grid;grid-template-columns: repeat(2, 225px);grid-gap: 10px;">
+
+										<!-- Table Left Bottom Table 1 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-2.1 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">702.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">499.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.40 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">29.30 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">32.10 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">33.60 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Left Bottom Table 2 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AD</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 14</th><th>RACK 13</th><th>RACK 12</th><th>RACK 11</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">58.70 kW</td><td class="td-text">54.70 kW</td><td class="td-text">22.30 kW</td><td class="td-text">48.20 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">150.20 I/min</td><td class="td-text">149.30 I/min</td><td class="td-text">149.10 I/min</td><td class="td-text">148.90 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">5.70 °C</td><td class="td-text">5.30 °C</td><td class="td-text">2.10 °C</td><td class="td-text">4.70 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">29.10 °C</td><td class="td-text">29.00 °C</td><td class="td-text">29.10 °C</td><td class="td-text">29.10 °C</td></tr></tbody></table></div>
+										<!-- Table Left Bottom Table 3 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-1.1 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">671.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">515.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.30 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">29.20 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">31.80 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">33.70 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Left Bottom Table 4 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AC</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 14</th><th>RACK 13</th><th>RACK 12</th><th>RACK 11</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">59.90 kW</td><td class="td-text">50.10 kW</td><td class="td-text">45.00 kW</td><td class="td-text">41.60 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">153.70 I/min</td><td class="td-text">153.30 I/min</td><td class="td-text">151.00 I/min</td><td class="td-text">151.10 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">5.60 °C</td><td class="td-text">4.70 °C</td><td class="td-text">4.30 °C</td><td class="td-text">4.00 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">29.30 °C</td><td class="td-text">29.30 °C</td><td class="td-text">29.30 °C</td><td class="td-text">29.30 °C</td></tr></tbody></table></div>
+									</div>
+
+
+									<!-- Table Right Bottom -->
+									<div style="position: absolute;bottom: 37%;right: 0px;display: grid;grid-template-columns: repeat(2, 225px);grid-gap: 10px;">
+
+										<!-- Table Right Bottom Table 2 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AD</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 10</th><th>RACK 9</th><th>RACK 8</th><th>RACK 7</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">57.70 kW</td><td class="td-text">45.30 kW</td><td class="td-text">61.60 kW</td><td class="td-text">53.00 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">150.10 I/min</td><td class="td-text">145.60 I/min</td><td class="td-text">149.40 I/min</td><td class="td-text">148.30 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">5.60 °C</td><td class="td-text">4.60 °C</td><td class="td-text">5.90 °C</td><td class="td-text">5.20 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">29.90 °C</td><td class="td-text">30.00 °C</td><td class="td-text">29.90 °C</td><td class="td-text">30.00 °C</td></tr></tbody></table></div>
+										<!-- Table Right Bottom Table 1 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-2.2 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">671.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">479.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.20 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">30.10 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">33.10 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">34.30 °C</td></tr>																									</table>
+											</div>
+										
+										<!-- Table Right Bottom Table 4 -->
+										<div class="comp-box">
+			<div class="comp-label">ENERGY VALVE STATUS COMPARTMENT AC</div>
+			<table class="comp-table"><thead class="comp-thead"><tr><td></td><th>RACK 10</th><th>RACK 9</th><th>RACK 8</th><th>RACK 7</th></tr></thead><tbody><tr><td class="td-label">Rack Liquid Cooling</td><td class="td-text">25.20 kW</td><td class="td-text">63.40 kW</td><td class="td-text">17.30 kW</td><td class="td-text">31.50 kW</td></tr><tr><td class="td-label">TCS Flow</td><td class="td-text">150.70 I/min</td><td class="td-text">154.30 I/min</td><td class="td-text">152.40 I/min</td><td class="td-text">151.60 I/min</td></tr><tr><td class="td-label">TCS Delta Temp</td><td class="td-text">2.40 °C</td><td class="td-text">6.00 °C</td><td class="td-text">1.60 °C</td><td class="td-text">3.00 °C</td></tr><tr><td class="td-label">TCS Temp Supply</td><td class="td-text">28.70 °C</td><td class="td-text">28.70 °C</td><td class="td-text">28.70 °C</td><td class="td-text">28.80 °C</td></tr></tbody></table></div>
+										<!-- Table Right Bottom Table 3 -->
+																					<div style="background:#fff; border-radius:6px; font-size:8px;">
+												<div style="background:#072068; color:#fff; font-weight:bold; text-align:center; padding:8px 6px;">
+													CGK3A-CL-1.04-CDU-1.2 STATUS
+												</div>
+												<table style="width:100%; border-collapse:collapse; text-align:left;border:1px solid #ffffff;">
+																																								<tr><td style="background-color:#71aff9;border:1px solid #ffffff;">CDU Cooling</td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;">0.00 %</td>
+														<td style="background-color:#71aff9;border:1px solid #ffffff;"></td>
+														<td style="background-color:#b7e4f0;border:1px solid #ffffff;"></td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">635.00 l/min</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Flow</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">547.00 l/min</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">27.60 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Sup</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">28.90 °C</td></tr>																											<tr?><td style="background-color:#71aff9;border:1px solid #ffffff;">FWS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">31.00 °C</td>																											<td style="background-color:#71aff9;border:1px solid #ffffff;">TCS Temp Ret</td>
+															<td style="background-color:#b7e4f0;border:1px solid #ffffff;">32.00 °C</td></tr>																									</table>
+											</div>
+										
+									</div>
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+			</main>
+
+		</div>
+	</div>
+
+	<script>
+		$(document).ready(function() {});
+	</script>
+</body>
+
+</html>
+```
+
+## Prometheus
+
+There will be 2 data
+
+1. Data for CDU details
+
+Inside the table name: "CGK3A-CL-1.04-[Name] STATUS"
+These CDU [Name] will be
+- CDU-1.1
+- CDU-2.1
+- CDU-3.1
+- CDU-4.1
+- CDU-1.2
+- CDU-2.2
+- CDU-3.2
+- CDU-4.2
+
+```
+bdx_liquid{"name":"CDU_1.1", "type": "status", "metrix_type": "percentage"} 0.00
+bdx_liquid{"name":"CDU_1.1", "type": "fws_flow", "metrix_type": "l/min"} 566.00
+bdx_liquid{"name":"CDU_1.1", "type": "fws_temp_sup", "metrix_type": "C"} 27.10
+bdx_liquid{"name":"CDU_1.1", "type": "fws_temp_ret", "metrix_type": "C"} 31.00
+```
+
+2. Data for Rack Details
+
+Inside the table name: "ENERGY VALVE STATUS COMPARTMENT [Name]"
+These Rack [Name] will be
+- AC
+- AD
+- AE
+- AF
+
+These table name have few columns that indicate Rack Number: "RACK [RackNumber]"
+These Rack Number will be
+- 7
+- 8
+- 9
+- 10
+- 11
+- 12
+- 13
+- 14
+
+```
+bdx_liquid_rack{"name":"7", "type": "rack_liquid_cooling", "metrix_type": "kW"} 55.10
+bdx_liquid_rack{"name":"7", "type": "tcs_flow", "metrix_type": "l/min"} 148.20
+bdx_liquid_rack{"name":"7", "type": "tcs_delta_temp", "metrix_type": "C"} 5.4
+```
