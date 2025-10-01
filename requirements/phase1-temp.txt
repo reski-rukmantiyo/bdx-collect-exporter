@@ -24,15 +24,3 @@
   bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-02"} 24.67
   bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-03"} 23.19
   ```
-
-  # Url for Raw Data
-
-  
-  CDU 1.1: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329
-  CDU 1.2: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337
-  CDU 2.1: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331
-  CDU 2.2: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339
-  CDU 3.1: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333
-  CDU 3.2: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341
-  CDU 4.1: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335
-  CDU 4.2: https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343 
