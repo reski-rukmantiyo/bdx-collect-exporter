@@ -41,15 +41,27 @@ var (
 
 // SensorData represents the sensor data from the API
 type SensorData struct {
-	Label string `json:"label"`
-	Temp  string `json:"temp"`
-	RH    string `json:"rh"`
+	Label string      `json:"label"`
+	Temp  interface{} `json:"temp"`
+	RH    interface{} `json:"rh"`
 }
 
 // Collector holds the configuration and HTTP client
 type Collector struct {
 	config *config.Config
 	client *http.Client
+}
+
+// parseValue converts interface{} to float64, handling string and float64 types
+func parseValue(v interface{}) (float64, error) {
+	switch val := v.(type) {
+	case string:
+		return strconv.ParseFloat(val, 64)
+	case float64:
+		return val, nil
+	default:
+		return 0, fmt.Errorf("unsupported type: %T", v)
+	}
 }
 
 // NewCollector creates a new collector
@@ -117,15 +129,15 @@ func (c *Collector) collectTRH() error {
 	humidityGauge.Reset()
 
 	for _, sensor := range sensors {
-		// Convert temperature string to float64
-		temp, err := strconv.ParseFloat(sensor.Temp, 64)
+		// Convert temperature to float64
+		temp, err := parseValue(sensor.Temp)
 		if err != nil {
 			log.Printf("Error parsing temperature for sensor %s: %v", sensor.Label, err)
 			continue
 		}
 
-		// Convert humidity string to float64
-		humidity, err := strconv.ParseFloat(sensor.RH, 64)
+		// Convert humidity to float64
+		humidity, err := parseValue(sensor.RH)
 		if err != nil {
 			log.Printf("Error parsing humidity for sensor %s: %v", sensor.Label, err)
 			continue

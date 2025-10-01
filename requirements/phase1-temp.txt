@@ -1,0 +1,26 @@
+# Phase 1 - Temperature
+
+## Raw Data
+
+```
+[{"x":16.2,"y":17.683068017366136,"label":"CGK3A-EMS-1.04-TH-DH-01","temp":"23.63","rh":"68.39","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":16.2,"y":50.24457308248915,"label":"CGK3A-EMS-1.04-TH-DH-02","temp":24.37,"rh":"62.95","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":16.2,"y":84.2532561505065,"label":"CGK3A-EMS-1.04-TH-DH-03","temp":"22.88","rh":"70.68","temp_class":0,"rh_class":2,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":37.03333333333334,"y":17.683068017366136,"label":"CGK3A-EMS-1.04-TH-DH-04","temp":23.12,"rh":"69.89","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":37.03333333333334,"y":50.24457308248915,"label":"CGK3A-EMS-1.04-TH-DH-05","temp":"23.21","rh":"69.59","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":37.03333333333334,"y":84.2532561505065,"label":"CGK3A-EMS-1.04-TH-DH-06","temp":23.21,"rh":"69.23","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":57.03333333333333,"y":17.683068017366136,"label":"CGK3A-EMS-1.04-TH-DH-07","temp":"22.88","rh":"71.17","temp_class":0,"rh_class":2,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":57.03333333333333,"y":50.24457308248915,"label":"CGK3A-EMS-1.04-TH-DH-08","temp":25.07,"rh":"61.36","temp_class":2,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":57.03333333333333,"y":84.2532561505065,"label":"CGK3A-EMS-1.04-TH-DH-09","temp":"22.77","rh":"71.8","temp_class":0,"rh_class":2,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":77.86666666666667,"y":17.683068017366136,"label":"CGK3A-EMS-1.04-TH-DH-10","temp":24.41,"rh":"63.51","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":77.86666666666667,"y":50.24457308248915,"label":"CGK3A-EMS-1.04-TH-DH-11","temp":"23.43","rh":"66.38","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"},{"x":77.86666666666667,"y":84.2532561505065,"label":"CGK3A-EMS-1.04-TH-DH-12","temp":23.31,"rh":"66.73","temp_class":0,"rh_class":0,"temp_code":"#fffd00","rh_code":"#fffd00"}]
+```
+
+## Fields to Extract**:
+- `label` - Sensor name/identifier
+- `temp` - Temperature reading
+- `rh` - Relative humidity reading
+
+## Prometheus
+
+**Metric: `bdx_temperature`**
+- **Type**: Gauge
+- **Description**: Current temperature reading in Celsius
+- **Labels**: 
+  - `name` - Sensor identifier (from `label` field)
+- **Example**:
+  ```
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-01"} 23.63
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-02"} 24.67
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-03"} 23.19
+  ```
