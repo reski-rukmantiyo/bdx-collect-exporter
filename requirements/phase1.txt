@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Development of a BDX Exporter service written in Golang to expose monitoring metrics in Prometheus-compatible format. The exporter will collect data from HTTP endpoints and web scraping to provide temperature, humidity, and CDU status metrics.
+Development of a BDX Exporter service written in Golang to expose monitoring metrics in Prometheus-compatible format. The exporter will collect data from HTTP endpoints and web scraping to provide temperature, humidity, CDU status, and liquid cooling metrics.
 
 ## Technical Stack
 
@@ -76,6 +76,20 @@ The exporter shall scrape CDU (Cooling Distribution Unit) status information fro
   - Alarm table
   - Parameter table
 
+### 3. Liquid Cooling Monitoring
+
+The exporter shall scrape liquid cooling data from the overview dashboard, including CDU statuses and rack energy valve information.
+
+**Data Source**:
+- URL: `https://app.managed360view.com/360view/liquid_cooling_overview.php`
+- Method: `GET`
+
+**Scraping Requirements**:
+- Use chromedp for browser automation
+- Extract data from:
+  - CDU status tables (flow rates, temperatures)
+  - Rack energy valve status tables (power consumption, flow rates, temperatures)
+
 ## Authentication & Session Management
 
 ### Required Cookies
@@ -116,6 +130,15 @@ Headers:
   Cookie: sess_map=...; PHPSESSID=...
 ```
 
+### Liquid Cooling Endpoint
+
+```
+GET https://app.managed360view.com/360view/liquid_cooling_overview.php
+
+Headers:
+  Cookie: sess_map=...; PHPSESSID=...
+```
+
 ## Prometheus Metrics
 
 The exporter shall expose the following metrics:
@@ -151,6 +174,36 @@ The exporter shall expose the following metrics:
 - `bdx_cdu_alarm_status` - CDU alarm status (scraped from Alarm table)
 - `bdx_cdu_parameters` - CDU operational parameters (scraped from Parameter table)
 
+### Liquid Cooling Metrics
+
+**Metric: `bdx_liquid`**
+- **Type**: Gauge
+- **Description**: CDU liquid cooling metrics
+- **Labels**:
+  - `name` - CDU identifier (e.g., "CDU_1.1")
+  - `type` - Metric type (e.g., "status", "fws_flow", "fws_temp_sup")
+  - `metrix_type` - Unit (e.g., "percentage", "l/min", "C")
+- **Example**:
+  ```
+  bdx_liquid{name="CDU_1.1", type="status", metrix_type="percentage"} 0.00
+  bdx_liquid{name="CDU_1.1", type="fws_flow", metrix_type="l/min"} 566.00
+  bdx_liquid{name="CDU_1.1", type="fws_temp_sup", metrix_type="C"} 27.10
+  ```
+
+**Metric: `bdx_liquid_rack`**
+- **Type**: Gauge
+- **Description**: Rack liquid cooling metrics
+- **Labels**:
+  - `name` - Rack number (e.g., "7", "8")
+  - `type` - Metric type (e.g., "rack_liquid_cooling", "tcs_flow", "tcs_delta_temp")
+  - `metrix_type` - Unit (e.g., "kW", "l/min", "C")
+- **Example**:
+  ```
+  bdx_liquid_rack{name="7", type="rack_liquid_cooling", metrix_type="kW"} 55.10
+  bdx_liquid_rack{name="7", type="tcs_flow", metrix_type="l/min"} 148.20
+  bdx_liquid_rack{name="7", type="tcs_delta_temp", metrix_type="C"} 5.4
+  ```
+
 ## Technical Implementation Details
 
 ### Web Server
@@ -162,11 +215,14 @@ The exporter shall expose the following metrics:
 ### Data Collection
 
 1. **HTTP Client**: For temperature and humidity data collection via POST request
-2. **chromedp**: For CDU dashboard scraping
+2. **chromedp**: For CDU and liquid cooling dashboard scraping
    - Navigate to CDU dashboard page
    - Wait for table elements to load
    - Extract data from Alarm table
    - Extract data from Parameter table
+   - Navigate to liquid cooling overview page
+   - Extract data from CDU status tables
+   - Extract data from rack energy valve tables
 
 ### Data Processing
 
