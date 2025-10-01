@@ -47,9 +47,9 @@ type LiquidRack struct {
 }
 
 // ScrapeCDU scrapes CDU data from the dashboard
-func ScrapeCDU(url, sessMap, phpSessID string) (string, []CDUAlarm, []CDUParameter, error) {
+func ScrapeCDU(url, sessMap, phpSessID string, timeout time.Duration) (string, []CDUAlarm, []CDUParameter, error) {
 	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	// Create chromedp context
@@ -204,9 +204,9 @@ func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
 }
 
 // ScrapeLiquidCooling scrapes liquid cooling data from the overview page
-func ScrapeLiquidCooling(url, sessMap, phpSessID string) ([]LiquidCDU, []LiquidRack, error) {
+func ScrapeLiquidCooling(url, sessMap, phpSessID string, timeout time.Duration) ([]LiquidCDU, []LiquidRack, error) {
 	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	// Create chromedp context

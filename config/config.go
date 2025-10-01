@@ -2,13 +2,18 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
 type Config struct {
 	Port             string
 	ScrapeInterval   time.Duration
+	HTTPTimeout      time.Duration
+	ScrapeTimeout    time.Duration
 	TRHURL           string
 	LiquidCoolingURL string
 	CDUURLs          []string
@@ -17,8 +22,11 @@ type Config struct {
 	Referer          string
 }
 
-// Load loads configuration from environment variables
+// Load loads configuration from environment variables and .env file
 func Load() (*Config, error) {
+	// Load .env file if it exists
+	_ = godotenv.Load()
+
 	port := getEnv("PORT", "8080")
 	scrapeIntervalStr := getEnv("SCRAPE_INTERVAL", "30s")
 	scrapeInterval, err := time.ParseDuration(scrapeIntervalStr)
@@ -26,24 +34,38 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	httpTimeoutStr := getEnv("HTTP_TIMEOUT", "10s")
+	httpTimeout, err := time.ParseDuration(httpTimeoutStr)
+	if err != nil {
+		return nil, err
+	}
+
+	scrapeTimeoutStr := getEnv("SCRAPE_TIMEOUT", "30s")
+	scrapeTimeout, err := time.ParseDuration(scrapeTimeoutStr)
+	if err != nil {
+		return nil, err
+	}
+
+	cduURLsStr := getEnv("CDU_URLS", "https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335,https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343")
+	var cduURLs []string
+	if cduURLsStr != "" {
+		cduURLs = strings.Split(cduURLsStr, ",")
+		for i := range cduURLs {
+			cduURLs[i] = strings.TrimSpace(cduURLs[i])
+		}
+	}
+
 	return &Config{
 		Port:             port,
 		ScrapeInterval:   scrapeInterval,
+		HTTPTimeout:      httpTimeout,
+		ScrapeTimeout:    scrapeTimeout,
 		TRHURL:           getEnv("TRH_URL", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
 		LiquidCoolingURL: getEnv("LIQUID_URL", "https://app.managed360view.com/360view/liquid_cooling_overview.php"),
-		CDUURLs: []string{
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329", // CDU 1.1
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337", // CDU 1.2
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331", // CDU 2.1
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339", // CDU 2.2
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333", // CDU 3.1
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341", // CDU 3.2
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335", // CDU 4.1
-			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343", // CDU 4.2
-		},
-		SessMap:   getEnv("SESS_MAP", "rcbqfqyrbtqtweyxzrsasyxfcfcssacawexwqaesxxdefbxvzyaydxrwyqxvvzrufbtdeauexytusqzewzddadqaadcrrabcftrftttbdyttusascfqzqsfcrqevytucbctrdtaxqwqyfuqcavzvfwzrswyszwwytyfswvqwazaxdedq"),
-		PHPSessID: getEnv("PHPSESSID", "ghv6gfuhing3knheq9hbnvaqh5"),
-		Referer:   getEnv("REFERER", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
+		CDUURLs:          cduURLs,
+		SessMap:          getEnv("SESS_MAP", "rcbqfqyrbtqtweyxzrsasyxfcfcssacawexwqaesxxdefbxvzyaydxrwyqxvvzrufbtdeauexytusqzewzddadqaadcrrabcftrftttbdyttusascfqzqsfcrqevytucbctrdtaxqwqyfuqcavzvfwzrswyszwwytyfswvqwazaxdedq"),
+		PHPSessID:        getEnv("PHPSESSID", "ghv6gfuhing3knheq9hbnvaqh5"),
+		Referer:          getEnv("REFERER", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
 	}, nil
 }
 

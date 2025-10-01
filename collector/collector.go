@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -52,8 +53,11 @@ type SensorData struct {
 
 // Collector holds the configuration and HTTP client
 type Collector struct {
-	config *config.Config
-	client *http.Client
+	config       *config.Config
+	client       *http.Client
+	lastCollect  time.Time
+	lastSuccess  bool
+	mu           sync.RWMutex
 }
 
 // parseValue converts interface{} to float64, handling string and float64 types
@@ -72,7 +76,7 @@ func parseValue(v interface{}) (float64, error) {
 func NewCollector(cfg *config.Config) *Collector {
 	return &Collector{
 		config: cfg,
-		client: &http.Client{Timeout: 10 * time.Second},
+		client: &http.Client{Timeout: cfg.HTTPTimeout},
 	}
 }
 
@@ -80,9 +84,12 @@ func NewCollector(cfg *config.Config) *Collector {
 func (c *Collector) Collect() {
 	log.Println("Starting data collection cycle")
 
+	success := true
+
 	// Collect temperature and humidity
 	if err := c.collectTRH(); err != nil {
 		log.Printf("Failed to collect TRH data: %v", err)
+		success = false
 	} else {
 		log.Println("Successfully collected TRH data")
 	}
@@ -90,6 +97,7 @@ func (c *Collector) Collect() {
 	// Collect CDU data
 	if err := c.collectCDU(); err != nil {
 		log.Printf("Failed to collect CDU data: %v", err)
+		success = false
 	} else {
 		log.Println("Successfully collected CDU data")
 	}
@@ -97,11 +105,25 @@ func (c *Collector) Collect() {
 	// Collect liquid cooling data
 	if err := c.collectLiquidCooling(); err != nil {
 		log.Printf("Failed to collect liquid data: %v", err)
+		success = false
 	} else {
 		log.Println("Successfully collected liquid data")
 	}
 
+	// Update health status
+	c.mu.Lock()
+	c.lastCollect = time.Now()
+	c.lastSuccess = success
+	c.mu.Unlock()
+
 	log.Println("Data collection cycle completed")
+}
+
+// GetHealthStatus returns the current health status
+func (c *Collector) GetHealthStatus() (time.Time, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.lastCollect, c.lastSuccess
 }
 
 // collectTRH collects temperature and humidity data
@@ -175,7 +197,7 @@ func (c *Collector) collectCDU() error {
 	successfulScrapes := 0
 
 	for _, url := range c.config.CDUURLs {
-		name, alarms, params, err := scraper.ScrapeCDU(url, c.config.SessMap, c.config.PHPSessID)
+		name, alarms, params, err := scraper.ScrapeCDU(url, c.config.SessMap, c.config.PHPSessID, c.config.ScrapeTimeout)
 		if err != nil {
 			log.Printf("Failed to scrape CDU data from %s: %v", url, err)
 			continue
@@ -224,7 +246,7 @@ func (c *Collector) collectLiquidCooling() error {
 	liquidGauge.Reset()
 	liquidRackGauge.Reset()
 
-	cdus, racks, err := scraper.ScrapeLiquidCooling(c.config.LiquidCoolingURL, c.config.SessMap, c.config.PHPSessID)
+	cdus, racks, err := scraper.ScrapeLiquidCooling(c.config.LiquidCoolingURL, c.config.SessMap, c.config.PHPSessID, c.config.ScrapeTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to scrape liquid data: %w", err)
 	}
