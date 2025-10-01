@@ -18,15 +18,15 @@ import (
 )
 
 var (
-	temperatureGauge = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "bdx_temperature_celsius",
+	temperatureGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "bdx_temperature",
 		Help: "Current temperature reading in Celsius",
-	})
+	}, []string{"name"})
 
-	humidityGauge = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "bdx_humidity_percent",
-		Help: "Current humidity percentage",
-	})
+	humidityGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "bdx_humidity",
+		Help: "Current relative humidity percentage",
+	}, []string{"name"})
 
 	cduAlarmGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "bdx_cdu_alarm_status",
@@ -39,10 +39,11 @@ var (
 	}, []string{"parameter"})
 )
 
-// TRHData represents the temperature and humidity data
-type TRHData struct {
-	Temperature float64 `json:"temperature"`
-	Humidity    float64 `json:"humidity"`
+// SensorData represents the sensor data from the API
+type SensorData struct {
+	Label string `json:"label"`
+	Temp  string `json:"temp"`
+	RH    string `json:"rh"`
 }
 
 // Collector holds the configuration and HTTP client
@@ -61,22 +62,30 @@ func NewCollector(cfg *config.Config) *Collector {
 
 // Collect collects data from all sources
 func (c *Collector) Collect() {
+	log.Println("Starting data collection cycle")
+
 	// Collect temperature and humidity
 	if err := c.collectTRH(); err != nil {
-		log.Printf("Error collecting TRH data: %v", err)
+		log.Printf("Failed to collect TRH data: %v", err)
+	} else {
+		log.Println("Successfully collected TRH data")
 	}
 
 	// Collect CDU data
 	if err := c.collectCDU(); err != nil {
-		log.Printf("Error collecting CDU data: %v", err)
+		log.Printf("Failed to collect CDU data: %v", err)
+	} else {
+		log.Println("Successfully collected CDU data")
 	}
+
+	log.Println("Data collection cycle completed")
 }
 
 // collectTRH collects temperature and humidity data
 func (c *Collector) collectTRH() error {
 	req, err := http.NewRequest("POST", c.config.TRHURL, bytes.NewBufferString("action=inf"))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -85,24 +94,51 @@ func (c *Collector) collectTRH() error {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to make HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP request failed with status: %s", resp.Status)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var data TRHData
-	if err := json.Unmarshal(body, &data); err != nil {
-		return err
+	var sensors []SensorData
+	if err := json.Unmarshal(body, &sensors); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
-	temperatureGauge.Set(data.Temperature)
-	humidityGauge.Set(data.Humidity)
+	// Reset gauges before setting new values
+	temperatureGauge.Reset()
+	humidityGauge.Reset()
 
-	log.Printf("Collected TRH: temp=%.2f, humidity=%.2f", data.Temperature, data.Humidity)
+	for _, sensor := range sensors {
+		// Convert temperature string to float64
+		temp, err := strconv.ParseFloat(sensor.Temp, 64)
+		if err != nil {
+			log.Printf("Error parsing temperature for sensor %s: %v", sensor.Label, err)
+			continue
+		}
+
+		// Convert humidity string to float64
+		humidity, err := strconv.ParseFloat(sensor.RH, 64)
+		if err != nil {
+			log.Printf("Error parsing humidity for sensor %s: %v", sensor.Label, err)
+			continue
+		}
+
+		// Set metrics with sensor name as label
+		temperatureGauge.WithLabelValues(sensor.Label).Set(temp)
+		humidityGauge.WithLabelValues(sensor.Label).Set(humidity)
+
+		log.Printf("Sensor %s: temp=%.2f°C, humidity=%.2f%%", sensor.Label, temp, humidity)
+	}
+
+	log.Printf("Collected TRH data for %d sensors", len(sensors))
 	return nil
 }
 
@@ -110,7 +146,7 @@ func (c *Collector) collectTRH() error {
 func (c *Collector) collectCDU() error {
 	alarmData, paramData, err := scraper.ScrapeCDU(c.config.CDUURL, c.config.SessMap, c.config.PHPSessID)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to scrape CDU data: %w", err)
 	}
 
 	// Reset gauges
@@ -118,27 +154,33 @@ func (c *Collector) collectCDU() error {
 	cduParameterGauge.Reset()
 
 	// Set alarm data
+	alarmCount := 0
 	for key, value := range alarmData {
 		val, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			log.Printf("Error parsing alarm value %s: %v", value, err)
+			log.Printf("Error parsing alarm value for %s (%s): %v", key, value, err)
 			continue
 		}
 		cduAlarmGauge.WithLabelValues(key).Set(val)
+		alarmCount++
+		log.Printf("CDU Alarm - %s: %s", key, value)
 	}
 
 	// Set parameter data
+	paramCount := 0
 	for key, value := range paramData {
 		// Clean value, remove units if any
 		cleanValue := strings.Fields(value)[0]
 		val, err := strconv.ParseFloat(cleanValue, 64)
 		if err != nil {
-			log.Printf("Error parsing parameter value %s: %v", cleanValue, err)
+			log.Printf("Error parsing parameter value for %s (%s): %v", key, cleanValue, err)
 			continue
 		}
 		cduParameterGauge.WithLabelValues(key).Set(val)
+		paramCount++
+		log.Printf("CDU Parameter - %s: %s", key, value)
 	}
 
-	log.Printf("Collected CDU: alarms=%d, params=%d", len(alarmData), len(paramData))
+	log.Printf("Collected CDU data: %d alarms, %d parameters", alarmCount, paramCount)
 	return nil
 }

@@ -23,6 +23,45 @@ The exporter shall collect temperature and humidity data from the 360View monito
 - Method: `POST`
 - Request Body: `action=inf`
 
+**Raw Data Format**:
+
+The API returns a JSON array of sensor objects:
+
+```json
+[
+  {
+    "x": 16.2,
+    "y": 17.683068017366136,
+    "label": "CGK3A-EMS-1.04-TH-DH-01",
+    "temp": "23.63",
+    "rh": "70.18",
+    "temp_class": 0,
+    "rh_class": 2,
+    "temp_code": "#fffd00",
+    "rh_code": "#fffd00"
+  },
+  ...
+]
+```
+
+**Field Mapping**:
+
+| Raw Field | Output Field | Description |
+|-----------|--------------|-------------|
+| `label` | `name` | Sensor identifier |
+| `temp` | `temperature` | Temperature value in Celsius |
+| `rh` | `humidity` | Relative humidity percentage |
+
+**Fields to Extract**:
+- `label` - Sensor name/identifier
+- `temp` - Temperature reading
+- `rh` - Relative humidity reading
+
+**Fields to Ignore**:
+- `x`, `y` - Coordinate positions (used for UI display)
+- `temp_class`, `rh_class` - Classification codes
+- `temp_code`, `rh_code` - Color codes for UI
+
 ### 2. CDU Status Monitoring
 
 The exporter shall scrape CDU (Cooling Distribution Unit) status information from alarm and parameter tables.
@@ -83,8 +122,29 @@ The exporter shall expose the following metrics:
 
 ### Temperature & Humidity Metrics
 
-- `bdx_temperature_celsius` - Current temperature reading in Celsius
-- `bdx_humidity_percent` - Current humidity percentage
+**Metric: `bdx_temperature`**
+- **Type**: Gauge
+- **Description**: Current temperature reading in Celsius
+- **Labels**: 
+  - `name` - Sensor identifier (from `label` field)
+- **Example**:
+  ```
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-01"} 23.63
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-02"} 24.67
+  bdx_temperature{name="CGK3A-EMS-1.04-TH-DH-03"} 23.19
+  ```
+
+**Metric: `bdx_humidity`**
+- **Type**: Gauge
+- **Description**: Current relative humidity percentage
+- **Labels**: 
+  - `name` - Sensor identifier (from `label` field)
+- **Example**:
+  ```
+  bdx_humidity{name="CGK3A-EMS-1.04-TH-DH-01"} 70.18
+  bdx_humidity{name="CGK3A-EMS-1.04-TH-DH-02"} 64.84
+  bdx_humidity{name="CGK3A-EMS-1.04-TH-DH-03"} 72.3
+  ```
 
 ### CDU Status Metrics
 
@@ -107,6 +167,35 @@ The exporter shall expose the following metrics:
    - Wait for table elements to load
    - Extract data from Alarm table
    - Extract data from Parameter table
+
+### Data Processing
+
+#### Temperature & Humidity Processing
+
+1. **Parse JSON Response**: Unmarshal the JSON array into Go structs
+2. **Transform Data**: 
+   - Extract `label` field → use as `name` label in metrics
+   - Extract `temp` field → convert to float64 for temperature metric value
+   - Extract `rh` field → convert to float64 for humidity metric value
+3. **Create Prometheus Metrics**:
+   - For each sensor object, create two metrics:
+     - `bdx_temperature{name="<label_value>"} <temp_value>`
+     - `bdx_humidity{name="<label_value>"} <rh_value>`
+
+**Example Go Struct**:
+```go
+type SensorData struct {
+    Label     string  `json:"label"`
+    Temp      string  `json:"temp"`
+    RH        string  `json:"rh"`
+    // Other fields can be ignored
+}
+```
+
+**Transformation Flow**:
+```
+Raw JSON → Parse → Extract (label, temp, rh) → Create Metrics with Labels
+```
 
 ### Session Management
 
