@@ -149,46 +149,62 @@ func (c *Collector) collectTRH() error {
 	return nil
 }
 
-// collectCDU collects CDU data using scraper
+// collectCDU collects CDU data using scraper for multiple URLs
 func (c *Collector) collectCDU() error {
-	name, alarms, params, err := scraper.ScrapeCDU(c.config.CDUURL, c.config.SessMap, c.config.PHPSessID)
-	if err != nil {
-		return fmt.Errorf("failed to scrape CDU data: %w", err)
-	}
-
 	// Reset gauge
 	cduGauge.Reset()
 
-	// Set alarm data
-	alarmCount := 0
-	for _, alarm := range alarms {
-		// Normalize item name for Prometheus
-		item := strings.ReplaceAll(alarm.Item, " ", "_")
-		item = strings.ReplaceAll(item, "-", "_")
-		status := strings.ToLower(alarm.Status)
-		cduGauge.WithLabelValues(name, "alarm", item, status, "").Set(1)
-		alarmCount++
-		log.Printf("CDU Alarm - %s: %s (%s)", alarm.Item, alarm.Status, status)
-	}
+	totalAlarms := 0
+	totalParams := 0
+	successfulScrapes := 0
 
-	// Set parameter data
-	paramCount := 0
-	for _, param := range params {
-		// Normalize item name
-		item := strings.ReplaceAll(param.Item, " ", "_")
-		item = strings.ReplaceAll(item, "-", "_")
-		// Normalize unit
-		unit := strings.ToLower(param.Unit)
-		if unit == "°c" {
-			unit = "celsius"
-		} else if unit == "%rh" {
-			unit = "percent_rh"
+	for _, url := range c.config.CDUURLs {
+		name, alarms, params, err := scraper.ScrapeCDU(url, c.config.SessMap, c.config.PHPSessID)
+		if err != nil {
+			log.Printf("Failed to scrape CDU data from %s: %v", url, err)
+			continue
 		}
-		cduGauge.WithLabelValues(name, "parameter", item, "normal", unit).Set(param.Value)
-		paramCount++
-		log.Printf("CDU Parameter - %s: %.2f %s", param.Item, param.Value, param.Unit)
+
+		// Set alarm data
+		alarmCount := 0
+		for _, alarm := range alarms {
+			// Normalize item name for Prometheus
+			item := strings.ReplaceAll(alarm.Item, " ", "_")
+			item = strings.ReplaceAll(item, "-", "_")
+			status := strings.ToLower(alarm.Status)
+			cduGauge.WithLabelValues(name, "alarm", item, status, "").Set(1)
+			alarmCount++
+			log.Printf("CDU Alarm - %s (%s): %s (%s)", name, alarm.Item, alarm.Status, status)
+		}
+
+		// Set parameter data
+		paramCount := 0
+		for _, param := range params {
+			// Normalize item name
+			item := strings.ReplaceAll(param.Item, " ", "_")
+			item = strings.ReplaceAll(item, "-", "_")
+			// Normalize unit
+			unit := strings.ToLower(param.Unit)
+			if unit == "°c" {
+				unit = "celsius"
+			} else if unit == "%rh" {
+				unit = "percent_rh"
+			}
+			cduGauge.WithLabelValues(name, "parameter", item, "normal", unit).Set(param.Value)
+			paramCount++
+			log.Printf("CDU Parameter - %s (%s): %.2f %s", name, param.Item, param.Value, param.Unit)
+		}
+
+		totalAlarms += alarmCount
+		totalParams += paramCount
+		successfulScrapes++
+		log.Printf("Collected CDU data for %s: %d alarms, %d parameters", name, alarmCount, paramCount)
 	}
 
-	log.Printf("Collected CDU data for %s: %d alarms, %d parameters", name, alarmCount, paramCount)
+	if successfulScrapes == 0 {
+		return fmt.Errorf("failed to scrape any CDU data")
+	}
+
+	log.Printf("Total CDU data collected: %d successful scrapes, %d alarms, %d parameters", successfulScrapes, totalAlarms, totalParams)
 	return nil
 }

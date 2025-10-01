@@ -10,7 +10,7 @@ type Config struct {
 	Port           string
 	ScrapeInterval time.Duration
 	TRHURL         string
-	CDUURL         string
+	CDUURLs        []string
 	SessMap        string
 	PHPSessID      string
 	Referer        string
@@ -29,10 +29,19 @@ func Load() (*Config, error) {
 		Port:           port,
 		ScrapeInterval: scrapeInterval,
 		TRHURL:         getEnv("TRH_URL", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
-		CDUURL:         getEnv("CDU_URL", "https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329"),
-		SessMap:        getEnv("SESS_MAP", "rcbqfqyrbtqtweyxzrsasyxfcfcssacawexwqaesxxdefbxvzyaydxrwyqxvvzrufbtdeauexytusqzewzddadqaadcrrabcftrftttbdyttusascfqzqsfcrqevytucbctrdtaxqwqyfuqcavzvfwzrswyszwwytyfswvqwazaxdedq"),
-		PHPSessID:      getEnv("PHPSESSID", "ghv6gfuhing3knheq9hbnvaqh5"),
-		Referer:        getEnv("REFERER", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
+		CDUURLs: []string{
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329", // CDU 1.1
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337", // CDU 1.2
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331", // CDU 2.1
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339", // CDU 2.2
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333", // CDU 3.1
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341", // CDU 3.2
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335", // CDU 4.1
+			"https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343", // CDU 4.2
+		},
+		SessMap:   getEnv("SESS_MAP", "rcbqfqyrbtqtweyxzrsasyxfcfcssacawexwqaesxxdefbxvzyaydxrwyqxvvzrufbtdeauexytusqzewzddadqaadcrrabcftrftttbdyttusascfqzqsfcrqevytucbctrdtaxqwqyfuqcavzvfwzrswyszwwytyfswvqwazaxdedq"),
+		PHPSessID: getEnv("PHPSESSID", "ghv6gfuhing3knheq9hbnvaqh5"),
+		Referer:   getEnv("REFERER", "https://app.managed360view.com/360view/trh_monitoring_dashboard.php"),
 	}, nil
 }
 
