@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,8 +11,21 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+// CDUAlarm represents an alarm entry
+type CDUAlarm struct {
+	Item   string
+	Status string
+}
+
+// CDUParameter represents a parameter entry
+type CDUParameter struct {
+	Item  string
+	Value float64
+	Unit  string
+}
+
 // ScrapeCDU scrapes CDU data from the dashboard
-func ScrapeCDU(url, sessMap, phpSessID string) (map[string]string, map[string]string, error) {
+func ScrapeCDU(url, sessMap, phpSessID string) (string, []CDUAlarm, []CDUParameter, error) {
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -46,57 +60,139 @@ func ScrapeCDU(url, sessMap, phpSessID string) (map[string]string, map[string]st
 	}
 
 	if err := chromedp.Run(taskCtx, network.SetCookies(cookies)); err != nil {
-		return nil, nil, fmt.Errorf("failed to set cookies: %v", err)
+		return "", nil, nil, fmt.Errorf("failed to set cookies: %v", err)
 	}
 
-	var alarmHTML, paramHTML string
+	var pageHTML string
 
 	// Run tasks
 	err := chromedp.Run(taskCtx,
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(`table`, chromedp.ByQuery), // Wait for tables to load
 		chromedp.Sleep(2*time.Second), // Additional wait
-		chromedp.Evaluate(`document.querySelectorAll('table')[0].outerHTML`, &alarmHTML),
-		chromedp.Evaluate(`document.querySelectorAll('table')[1].outerHTML`, &paramHTML),
+		chromedp.OuterHTML("html", &pageHTML),
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to scrape: %v", err)
+		return "", nil, nil, fmt.Errorf("failed to scrape: %v", err)
 	}
 
-	alarmData := parseTable(alarmHTML)
-	paramData := parseTable(paramHTML)
+	name, alarms, params := parseCDUHTML(pageHTML)
 
-	return alarmData, paramData, nil
+	return name, alarms, params, nil
 }
 
-// parseTable parses HTML table and returns key-value map
-func parseTable(html string) map[string]string {
-	data := make(map[string]string)
+// parseCDUHTML parses the full HTML and extracts name, alarms and parameters
+func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
+	var name string
+	var alarms []CDUAlarm
+	var params []CDUParameter
 
-	// Simple parsing: split by <tr>, then <td>
-	rows := strings.Split(html, "<tr>")
-	for _, row := range rows {
-		if strings.Contains(row, "<td>") {
-			cells := strings.Split(row, "<td>")
+	// Extract name from title
+	nameStart := strings.Index(html, `<h5 class="card-title mb-0">`)
+	if nameStart != -1 {
+		nameEnd := strings.Index(html[nameStart:], "</h5>")
+		if nameEnd != -1 {
+			nameText := html[nameStart+len(`<h5 class="card-title mb-0">`):nameStart+nameEnd]
+			name = strings.TrimSpace(nameText)
+			// Replace - with _ for Prometheus
+			name = strings.ReplaceAll(name, "-", "_")
+		}
+	}
+	if name == "" {
+		name = "CDU_1.1" // fallback
+	}
+
+	// Find the alarm table: look for the table after "ALARM" header
+	alarmTableStart := strings.Index(html, "ALARM")
+	if alarmTableStart == -1 {
+		return name, alarms, params
+	}
+
+	// Find the tbody after ALARM
+	alarmTbodyStart := strings.Index(html[alarmTableStart:], "<tbody>")
+	if alarmTbodyStart == -1 {
+		return name, alarms, params
+	}
+	alarmTbodyStart += alarmTableStart
+
+	alarmTbodyEnd := strings.Index(html[alarmTbodyStart:], "</tbody>")
+	if alarmTbodyEnd == -1 {
+		return name, alarms, params
+	}
+	alarmTbodyEnd += alarmTbodyStart
+
+	alarmTbody := html[alarmTbodyStart:alarmTbodyEnd]
+
+	// Parse alarm rows
+	alarmRows := strings.Split(alarmTbody, "<tr>")
+	for _, row := range alarmRows {
+		if strings.Contains(row, "<td") && strings.Contains(row, "td-detail") {
+			cells := strings.Split(row, "<td")
 			if len(cells) >= 3 {
-				key := extractText(cells[1])
-				value := extractText(cells[2])
-				if key != "" && value != "" {
-					data[key] = value
+				item := extractText(cells[1])
+				status := extractText(cells[2])
+				if item != "" && status != "" {
+					alarms = append(alarms, CDUAlarm{Item: item, Status: status})
 				}
 			}
 		}
 	}
 
-	return data
+	// Find the parameter table: look for the table after "PARAMETER" header
+	paramTableStart := strings.Index(html, "PARAMETER")
+	if paramTableStart == -1 {
+		return name, alarms, params
+	}
+
+	// Find the tbody after PARAMETER
+	paramTbodyStart := strings.Index(html[paramTableStart:], "<tbody>")
+	if paramTbodyStart == -1 {
+		return name, alarms, params
+	}
+	paramTbodyStart += paramTableStart
+
+	paramTbodyEnd := strings.Index(html[paramTbodyStart:], "</tbody>")
+	if paramTbodyEnd == -1 {
+		return name, alarms, params
+	}
+	paramTbodyEnd += paramTbodyStart
+
+	paramTbody := html[paramTbodyStart:paramTbodyEnd]
+
+	// Parse parameter rows
+	paramRows := strings.Split(paramTbody, "<tr>")
+	for _, row := range paramRows {
+		if strings.Contains(row, "<td") && strings.Contains(row, "td-detail") {
+			cells := strings.Split(row, "<td")
+			if len(cells) >= 4 {
+				item := extractText(cells[1])
+				valueStr := extractText(cells[2])
+				unit := extractText(cells[3])
+				if item != "" && valueStr != "" {
+					value, err := strconv.ParseFloat(valueStr, 64)
+					if err == nil {
+						params = append(params, CDUParameter{Item: item, Value: value, Unit: unit})
+					}
+				}
+			}
+		}
+	}
+
+	return name, alarms, params
 }
 
 // extractText extracts text from HTML cell
 func extractText(cell string) string {
-	// Remove HTML tags
-	text := strings.ReplaceAll(cell, "<br>", " ")
+	// Remove HTML tags and attributes
+	start := strings.Index(cell, ">")
+	if start == -1 {
+		return ""
+	}
+	text := cell[start+1:]
 	text = strings.ReplaceAll(text, "</td>", "")
 	text = strings.ReplaceAll(text, "</th>", "")
+	text = strings.ReplaceAll(text, "<b>", "")
+	text = strings.ReplaceAll(text, "</b>", "")
 	text = strings.TrimSpace(text)
 	return text
 }

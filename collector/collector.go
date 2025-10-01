@@ -28,15 +28,10 @@ var (
 		Help: "Current relative humidity percentage",
 	}, []string{"name"})
 
-	cduAlarmGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "bdx_cdu_alarm_status",
-		Help: "CDU alarm status",
-	}, []string{"alarm"})
-
-	cduParameterGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "bdx_cdu_parameters",
-		Help: "CDU operational parameters",
-	}, []string{"parameter"})
+	cduGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "bdx_cdu",
+		Help: "CDU metrics including alarms and parameters",
+	}, []string{"name", "type", "item", "status", "metrix_type"})
 )
 
 // SensorData represents the sensor data from the API
@@ -156,43 +151,44 @@ func (c *Collector) collectTRH() error {
 
 // collectCDU collects CDU data using scraper
 func (c *Collector) collectCDU() error {
-	alarmData, paramData, err := scraper.ScrapeCDU(c.config.CDUURL, c.config.SessMap, c.config.PHPSessID)
+	name, alarms, params, err := scraper.ScrapeCDU(c.config.CDUURL, c.config.SessMap, c.config.PHPSessID)
 	if err != nil {
 		return fmt.Errorf("failed to scrape CDU data: %w", err)
 	}
 
-	// Reset gauges
-	cduAlarmGauge.Reset()
-	cduParameterGauge.Reset()
+	// Reset gauge
+	cduGauge.Reset()
 
 	// Set alarm data
 	alarmCount := 0
-	for key, value := range alarmData {
-		val, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			log.Printf("Error parsing alarm value for %s (%s): %v", key, value, err)
-			continue
-		}
-		cduAlarmGauge.WithLabelValues(key).Set(val)
+	for _, alarm := range alarms {
+		// Normalize item name for Prometheus
+		item := strings.ReplaceAll(alarm.Item, " ", "_")
+		item = strings.ReplaceAll(item, "-", "_")
+		status := strings.ToLower(alarm.Status)
+		cduGauge.WithLabelValues(name, "alarm", item, status, "").Set(1)
 		alarmCount++
-		log.Printf("CDU Alarm - %s: %s", key, value)
+		log.Printf("CDU Alarm - %s: %s (%s)", alarm.Item, alarm.Status, status)
 	}
 
 	// Set parameter data
 	paramCount := 0
-	for key, value := range paramData {
-		// Clean value, remove units if any
-		cleanValue := strings.Fields(value)[0]
-		val, err := strconv.ParseFloat(cleanValue, 64)
-		if err != nil {
-			log.Printf("Error parsing parameter value for %s (%s): %v", key, cleanValue, err)
-			continue
+	for _, param := range params {
+		// Normalize item name
+		item := strings.ReplaceAll(param.Item, " ", "_")
+		item = strings.ReplaceAll(item, "-", "_")
+		// Normalize unit
+		unit := strings.ToLower(param.Unit)
+		if unit == "°c" {
+			unit = "celsius"
+		} else if unit == "%rh" {
+			unit = "percent_rh"
 		}
-		cduParameterGauge.WithLabelValues(key).Set(val)
+		cduGauge.WithLabelValues(name, "parameter", item, "normal", unit).Set(param.Value)
 		paramCount++
-		log.Printf("CDU Parameter - %s: %s", key, value)
+		log.Printf("CDU Parameter - %s: %.2f %s", param.Item, param.Value, param.Unit)
 	}
 
-	log.Printf("Collected CDU data: %d alarms, %d parameters", alarmCount, paramCount)
+	log.Printf("Collected CDU data for %s: %d alarms, %d parameters", name, alarmCount, paramCount)
 	return nil
 }

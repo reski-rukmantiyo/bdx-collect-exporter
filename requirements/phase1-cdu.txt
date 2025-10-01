@@ -1,0 +1,810 @@
+# Phase 1 - CDU status
+
+## Raw Data will be like this
+
+```
+
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<link rel="shortcut icon" href="https://app.managed360view.com/360view/assets/img/favicon.ico" type="image/x-icon">
+	<title>360°View Data Center Information Management</title>
+	<!--------New added by Vipin S------->
+
+	<link href="assets/css/app.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+	<!-- <link href="assets/css/video.css" rel="stylesheet"> -->
+	<link href="assets/css/video-js.css" rel="stylesheet">
+	<link href="assets/css/modal.css" rel="stylesheet">
+	
+	<style type="text/css">
+		.langselect{
+			display: none !important;
+		}
+		.canvas {position: relative; background-repeat: no-repeat;}
+		.canvas img {position: absolute; top: 0; left: 0; z-index: 10;}
+		.cabnavigator .nav { text-align: center; }
+		.cabnavigator .nav li { margin-top: 0.1em; border: 1px solid darkGray;}
+		.cabnavigator .nav a:hover li { border-color: black; }
+
+		.cabnavigator th a { color: black; text-decoration: none; pointer-events: none; }
+
+		.cabnavigator.tooltip {
+			min-height:90px;
+			min-width: 120px;
+			z-index: 99;
+			position: absolute;
+			white-space: nowrap;
+			border-radius:10px;
+			color: #fff;
+			border: 0px;
+			line-height: 24px;
+			margin: 5px;
+			padding: 10px;
+			margin-top: -20px;
+		}
+		.cabnavigator.tooltip ul{
+			margin-bottom: 0px;
+		}
+		.border{border: 0px !important;}
+		.border1, .border1 div {
+			border: 1px solid gray;
+		}
+		.arrow_left { position: relative; background: #3d454d; border: 1px solid #3d454d;} 
+		.arrow_left:after, .arrow_left:before { right: 100%; border: solid transparent; content: " "; height: 0; width: 0; position: absolute; pointer-events: none; } 
+		/* .arrow_left:after { border-color: rgba(255, 255, 255, 0); border-right-color: #3d454d; border-width: 15px; top: 15px; margin-top:15px; }  */
+		.arrow_left:before { border-color: rgba(0, 0, 0, 0); border-right-color: #3d454d; border-width: 16px; top: 15px; margin-top:16px; }
+
+		.main{
+			overflow-x: scroll !important;
+		}
+		.centermargin {
+			margin-left: auto;
+			margin-right: auto;
+		}
+		/* Data Center Stats */
+		.dpanchor{position:absolute;width:14px;height:14px;border-radius:4px;border: 1px solid grey}					
+		.dcstats .heading > div{width: 89%;display: inline-block;vertical-align: middle;}
+		.dcstats .heading > div + div {width: 10%;}
+		.dcstats .heading > div + div button {display: block;width: 100%;}
+		.dcstats .table, .dcstats .table .title { background-color: white; }
+		.dcstats .table .title { font-weight: bold; font-size: 1.25em; width: 100%;}
+		.dcstats .table .title span { font-size: 0.6em; vertical-align: top;}
+		.dcstats .table .title span:before { content:"  [ "; }
+		.dcstats .table .title span:after { content:" ]";}
+		.dcstats .table div {padding: 3px;}
+		div#dcstats { display: table;}
+		div#dcstats > div{ width: 100%;}
+		div#dcstats .table + .table > div > div + div{white-space: pre; text-align: right;}
+		.canvas {position: relative; background-repeat: no-repeat;}
+		.canvas img {position: absolute; top: 0; left: 0; z-index: 10;}
+		.dcstats ~ #tt span {font-size: 1.5em; text-align: center; font-weight: bold;}
+		.dcstats ~ #tt ul {list-style-type: none;}
+		.dcstats ~ #tt ul li.red {background: url('images/rs.png') left center no-repeat; line-height: 20px; padding-left: 20px;}
+		.dcstats ~ #tt ul li.green {background: url('images/gs.png') left center no-repeat; line-height: 20px; padding-left: 20px;}
+		.dcstats ~ #tt ul li.yellow {background: url('images/ys.png') left center no-repeat; line-height: 20px; padding-left: 20px;}
+		.dcstats ~ #tt ul li.wtf {background: url('images/us.png') left center no-repeat; line-height: 20px; padding-left: 20px;}
+		#maptitle {padding: 8px; font-size: 120%; font-weight: bold;} 
+		#maptitle .nav {float: right; height: 21px;}
+		#mapCanvas { margin-bottom: 50px; position: relative;}
+		#crossConnect { margin-bottom: 50px; position: relative;}
+		canvas#background { position: absolute; }
+		div.table > div > div {
+			display: table-cell;
+			vertical-align: middle;
+			/* padding-bottom: .75em; */
+		}
+		div.table > div {
+			display: table;
+		}
+		.table {
+			display: table;
+			text-align: left;
+			border-collapse: collapse;
+		}
+		div.table > div {
+			display: table-caption;
+		}
+
+		.toolb {
+			position: absolute;
+			width: 200px;
+			background-color: lightgrey;
+			left: 300px;
+			top: 35px;
+			margin-left: 150px;
+			margin-top: -35px;
+		}
+		/* #heatmapContainerWrapper { width:100%; height:100%; position:absolute; background:rgba(0,0,0,.1); }
+		#heatmapContainer { width:100%; height:100%;}
+		#heatmapLegend { background:white; position:absolute; bottom:0; right:0; padding:10px; } */
+
+
+		#map { height:100%; }
+		.leaflet-container {
+		background: rgba(0,0,0,.8) !important;
+		}
+
+		.select2{
+			width : auto !important;
+		}
+
+		/* scrollbar */
+		::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+		}
+
+		::-webkit-scrollbar-track {
+		-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+		-webkit-border-radius: 10px;
+		border-radius: 10px;
+		}
+
+		::-webkit-scrollbar-thumb {
+		-webkit-border-radius: 10px;
+		border-radius: 10px;
+		background: rgba(255, 255, 255, 0.3);
+		-webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+		}
+
+		::-webkit-scrollbar-thumb:window-inactive {
+		background: rgba(255, 255, 255, 0.3);
+		}
+
+		.sidebar-brand {
+			position: fixed;
+			z-index: 99;
+		}
+
+		.td-heading {
+			/* font-size: 12px; */
+			font-size: 10px;
+		}
+		.td-detail {
+			/* font-size: 13px; */
+			font-size: 10px;
+		}
+		/* @media (max-width: 1440px) {
+		.td-heading {
+			font-size: 10px;
+		}
+
+		.td-detail {
+			font-size: 11px;
+		}
+		} */
+
+	</style>
+	<!--------New added by Vipin E------->
+
+
+	<!--------<link rel="stylesheet" href="css/inventory_1.php" type="text/css">------->
+	<link rel="stylesheet" href="css/print.css" type="text/css" media="print">
+	<link rel="stylesheet" href="css/jquery-ui.css" type="text/css">
+	<script type="text/javascript" src="scripts/jquery.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="scripts/common.js?v1755773956"></script>
+	<script type="text/javascript" src="scripts/jquery.ui-contextmenu.js"></script>
+  
+	<script src="assets/js/app.js"></script>
+
+	<script type="text/javascript">
+		var js_outlinecabinets = 0;
+		var js_labelcabinets = 0;
+	</script>
+	<!--[if lte IE 8]>
+		<link rel="stylesheet"  href="css/ie.css" type="text/css">
+				<script src="scripts/excanvas.js"></script>
+	<![endif]-->
+</head>
+<body>
+	<div class="wrapper">
+		<nav id="sidebar" class="sidebar">
+			<div class="sidebar-content js-simplebar" style="height: 734px;">
+				<a class="sidebar-brand bg-primary" href="index.php">
+					<span class="align-middle"><img src="assets/img/logo.png" alt="BDx Logo" class="brand-image"></span>
+				</a>
+				<div class="sidebar-wrapper" style="margin-top: 65px;"><div id="sidebar" style="">
+	<style>
+		.simplebar-content { height:auto; }	
+	</style>
+<!-- <br>
+<form action="search.php" method="post">
+<input type="hidden" name="key" value="label"> -->
+<!-- </select> -->
+<!-- <div class="ui-icon ui-icon-close"></div> 
+</form>-->
+  <script type="text/javascript">
+	function addlookup(inputobj,lookuptype){
+		// clear any existing autocompletes
+		if(inputobj.hasClass('ui-autocomplete-input')){inputobj.autocomplete('destroy');}
+		// clear out previous search arrows
+		inputobj.next('.text-arrow').remove();
+		// Position the arrow
+		var inputpos=inputobj.position();
+		var arrow=$('<div />').addClass('text-arrow');
+		arrow.click(function(){
+			inputobj.autocomplete("search", "");
+		});
+		// add the autocomplete
+		inputobj.autocomplete({
+			minLength: 0,
+			delay: 600,
+			autoFocus: true,
+			source: function(req, add){
+				$.getJSON('scripts/ajax_search.php?'+lookuptype, {q: req.term}, function(data){
+					var suggestions=[];
+					$.each(data, function(i,val){
+						suggestions.push(val);
+					});
+					add(suggestions);
+				});
+			},
+			open: function(){
+				$(this).autocomplete("widget").css({'width': inputobj.width()+6+'px'});
+			}
+		}).next().after(arrow);
+		arrow.css({'top': inputpos.top+'px', 'left': inputpos.left+inputobj.width()-(arrow.width()/2)});
+	}
+	$('#advsrch, #searchadv ~ .ui-icon.ui-icon-close').click(function(){
+		var here=$(this).position();
+		$('#searchadv, #searchname').val('');
+		$('#searchadv').parents('form').height(here.top).toggle('slide',200).removeClass('hide');
+		if($('#searchadv').hasClass('ui-autocomplete-input')){$('#searchadv').autocomplete('destroy');}
+		if($(this).text()=='Advanced'){$(this).text('Basic');$('#searchadv ~ select[name="key"]').trigger('change');}else{$(this).text('Advanced');}
+	});
+	$('#customsrch').click(function(){
+		window.location="custom_search.php";
+	});
+  </script>
+  <script type="text/javascript" src="https://app.managed360view.com/360view/scripts/mktree.js"></script> 
+  <script type="text/javascript" src="https://app.managed360view.com/360view/scripts/konami.js"></script> 
+
+  <script src="https://app.managed360view.com/360view/assets/js/jquery.overlayScrollbars.min.js"></script>
+<ul class="sidebar-nav"><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>Dashboard</a><ul id='menu_1' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a href="https://app.managed360view.com/360view/alarm_dashboard.php" class="sidebar-link menu_81" onclick="checkMenu(81);"><span class="align-middle">Alarm Dashboard</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/trh_monitoring_dashboard.php" class="sidebar-link menu_83" onclick="checkMenu(83);"><span class="align-middle">Temp & RH Monitoring</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/trh_trend_dashboard.php" class="sidebar-link menu_85" onclick="checkMenu(85);"><span class="align-middle">Temp & RH Trend</span></a></li></ul></li><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>CDU Dashboard</a><ul id='menu_2' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329" class="sidebar-link menu_89" onclick="checkMenu(89);"><span class="align-middle">CDU-1.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38331" class="sidebar-link menu_93" onclick="checkMenu(93);"><span class="align-middle">CDU-2.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38333" class="sidebar-link menu_97" onclick="checkMenu(97);"><span class="align-middle">CDU-3.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38335" class="sidebar-link menu_101" onclick="checkMenu(101);"><span class="align-middle">CDU-4.1</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38337" class="sidebar-link menu_91" onclick="checkMenu(91);"><span class="align-middle">CDU-1.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38339" class="sidebar-link menu_95" onclick="checkMenu(95);"><span class="align-middle">CDU-2.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38341" class="sidebar-link menu_99" onclick="checkMenu(99);"><span class="align-middle">CDU-3.2</span></a></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38343" class="sidebar-link menu_103" onclick="checkMenu(103);"><span class="align-middle">CDU-4.2</span></a></li></ul></li><li class='sidebar-item'><a href="https://app.managed360view.com/360view/liquid_cooling_overview.php" class="sidebar-link menu_105" onclick="checkMenu(105);"><span class="align-middle">Liquid Cooling Overview</span></a></li><li class='sidebar-item'><a class='sidebar-link collapsed' data-bs-toggle='collapse' aria-expanded='false'>Data Center</a><ul id='menu_4' class='sidebar-dropdown list-unstyled collapse' data-bs-parent='#sidebar'><li class='sidebar-item'><a class="nav-link menu_c1" onclick="checkMenu('c1');" href="https://app.managed360view.com/360view/container_stats.php?container=139" style="padding:.625rem 1.5rem .625rem 2.25rem; color:#e2e5e8;"><span class="align-middle">CGK3A</span></a><a class="sidebar-link menu_dc849" onclick="checkMenu('dc849');" href="https://app.managed360view.com/360view/dc_stats.php?dc=849"><span class="align-middle">Level 4 INF AI Cluster - Floor Layout</span></a></li></ul></li></ul>
+	
+	<div>
+	
+	<div class="langselect hide">
+		<label for="language">Language</label>
+		<select name="language" id="language" current="en_US">			<option value="ca_AD">ca_AD</option>			<option value="de_DE">de_DE</option>			<option value="en_GB">en_GB</option>			<option value="en_US" selected>en_US</option>			<option value="es_ES">es_ES</option>			<option value="fr_FR">fr_FR</option>			<option value="gl_ES">gl_ES</option>			<option value="it_IT">it_IT</option>			<option value="ja_JP">ja_JP</option>			<option value="ko_KR">ko_KR</option>			<option value="pl_PL">pl_PL</option>			<option value="pt_BR">pt_BR</option>			<option value="ru_RU">ru_RU</option>			<option value="sk_SK">sk_SK</option>			<option value="sl_SI">sl_SI</option>			<option value="uk_UA">uk_UA</option>			<option value="zh_CN">zh_CN</option>		</select>
+	</div>
+
+	<div id="nav_placeholder"></div>	</div>
+<script type="text/javascript">
+/* if (typeof jQuery == 'undefined') {
+	alert('jQuery is not loaded');
+	window.location.assign("http://BDxDCIM.org/wiki/index.php?title=Errors:Operational");
+}
+if (typeof jQuery.ui == 'undefined') {
+	alert('jQueryUI is not loaded');
+	window.location.assign("http://BDxDCIM.org/wiki/index.php?title=Errors:Operational");
+} */
+
+$("#sidebar .nav a").each(function(){
+	var loc=window.location;
+	if($(this).attr("href")=="cdu_dashboard.php" || $(this).attr("href")==loc.href.substr(loc.href.indexOf(loc.host)+loc.host.length+1)){
+		$(this).addClass("active");
+		$(this).parentsUntil("#ui-id-1","li").children('a:first-child').addClass("active");
+	}
+});
+$("#sidebar .nav").menu();
+
+// $('#searchname').width($('#sidebar').innerWidth() - $('#searchname ~ button').outerWidth());
+// addlookup($('#searchname'),'name');
+// $('#searchadv ~ select[name="key"]').change(function(){
+// 	addlookup($('#searchadv'),$(this).val())
+// }).outerHeight($('#searchadv').outerHeight()).outerWidth(157);
+
+// Really long cabinet / zone / dc combinations are making the screen jump around.
+// If they make this thing so big it's unusable, fuck em.
+$('#sidebar > hr ~ div').css({'width':$('#sidebar > hr ~ ul').width()+'px','overflow':'hidden'});
+
+$('.sidebar-link').click(function(){
+	if($(this).hasClass("collapsed")){
+		$(this).removeClass("collapsed");
+		$(this).attr("aria-expanded","true");
+		$(this).next('ul').addClass("show");
+
+	}else{
+		$(this).addClass("collapsed");
+		$(this).removeAttr("aria-expanded");
+		$(this).next('ul').removeClass("show");
+	}
+});
+
+function resize(){
+	// Reset widths to make shrinking screens work better
+	//$('#header,div.main,div.page').css('width','auto');
+	// This function will run each 500ms for 2.5s to account for slow loading content
+	var count=0;
+	subresize();
+	var longload=setInterval(function(){
+		subresize();
+		if(count>4){
+			clearInterval(longload);
+			window.resized=true;
+		}
+		++count;
+	},500);
+
+	function subresize(){
+		// page width is calcuated different between ie, chrome, and ff
+		$('#header').width(Math.floor($(window).outerWidth()-(16*3))); //16px = 1em per side padding
+		var widesttab=0;
+		// make all the tabs on the config page the same width
+		$('#configtabs > ul ~ div').each(function(){
+			widesttab=($(this).width()>widesttab)?$(this).width():widesttab;
+		});
+		$('#configtabs > ul ~ div').each(function(){
+			$(this).width(widesttab);
+		});
+
+		if(typeof getCookie=='function' && getCookie("layout")=="Landscape"){
+			// edge case where a ridiculously long device type can expand the field selector out too far
+			var rdivwidth=$('div.right').outerWidth();
+			$('div.right fieldset').each(function(){
+				rdivwidth=($(this).outerWidth()>rdivwidth)?$(this).outerWidth():rdivwidth;
+			});
+			// offset for being centered
+			rdivwidth=(rdivwidth>495)?(rdivwidth-495)+rdivwidth:rdivwidth;
+		}else{
+			rdivwidth=0;
+		}
+
+		var pnw=$('#pandn').outerWidth(),hw=$('#header').outerWidth(),maindiv=$('div.main').outerWidth(),
+			sbw=$('#sidebar').outerWidth(),width,mw=$('div.left').outerWidth()+rdivwidth+20,
+			main,cw=$('.main > .center').outerWidth();
+		widesttab+=58;
+
+		// find widths
+		width=(cw>mw)?cw:mw;
+		main=(pnw>width)?pnw:width; // Find the largest width of possible content in maindiv
+		main+=12; // add in padding and borders
+		width=((main+sbw)>hw)?main+sbw:hw; // find the widest point of the page
+
+		// The math just isn't adding up across browsers and FUCK IE
+		/*if((main+sbw)<width){ // page is larger than content expand main to fit
+			$('#header').outerWidth(width);
+			$('div.main').outerWidth(width-sbw-4); 
+			$('div.page').outerWidth(width);
+		}else{ // page is smaller than content expand the page to fit
+			$('div.main').width(width-sbw-12); 
+			$('#header').width(width+4);
+			$('div.page').width(width+6);
+		}*/
+
+		// If the function MoveButtons is defined run it
+		if(typeof movebuttons=='function'){
+			movebuttons();
+		}
+	}
+}
+$(document).ready(function(){
+	resize();
+	// redraw the screen if the window size changes for some reason
+	$(window).resize(function(){
+		if(this.resizeTO){ clearTimeout(this.resizeTO);}
+		this.resizeTO=setTimeout(function(){
+			resize();
+		}, 500);
+	});
+	$('#header').append($('.langselect'));
+	$(".langselect").css({"right": "3px", "z-index": "99", "position": "absolute"}).removeClass('hide').appendTo("#header");
+	$(".langselect").css({"bottom": $(".langselect").height()+"px"});
+	$("#language").change(function(){
+		$.ajax({
+			type: 'POST',
+			url: 'scripts/ajax_language.php',
+			data: 'sl='+$("#language").val(),
+			success: function(){
+				// new cookie was set. reload the page for the translation.
+				location.reload();
+			}
+		});
+	});
+	$('html, body').animate({
+		scrollTop: $(".sidebar").offset().top
+	}, 200)
+	$.get('https://app.managed360view.com/360view/scripts/ajax_navmenu.php').done(function(data){
+		$('#nav_placeholder').replaceWith(data);
+		if(document.readyState==="complete" && $('#datacenters .bullet').length==0){
+			window.convertTrees();
+		}
+	});
+});
+
+</script>
+<script>
+	var active_menu = "";
+	if(active_menu > 0 || active_menu != ''){
+		$(".menu_"+active_menu).parent().addClass('active');
+		$(".menu_"+active_menu).parent().parent().addClass('show');
+		$(".menu_"+active_menu).parent().parent().parent().find('a:first').removeClass('collapsed');
+	}
+	function checkMenu(menuID){
+		console.log('sdsd');
+		$.ajax({
+			url : 'scripts/setMenu.php',
+			type: 'POST',
+			async:false,
+			data:{
+				ID : menuID
+			},
+			success:function(data){
+				return true;
+			}
+		});
+	}
+</script>
+</div>
+
+
+<noscript>
+	<div id="gandalf"><div></div><p>Please enable javascript to continue</p></div>
+</noscript>
+</div>
+			</div>
+		</nav>
+	
+		<div class="main">
+			<nav class="navbar navbar-expand navbar-light navbar-bg">
+				
+
+<a class="sidebar-toggle d-flex">
+					<i class="hamburger align-self-center"></i>
+				</a>
+				<form action="search.php" method="post" class="d-none d-sm-inline-block" style="display:none !important;">
+					<div class="input-group input-group-navbar">
+						<input type="hidden" name="key" value="label">
+						<input type="text" class="form-control" placeholder="Search…" id="searchname" name="search" autocomplete="off">
+						<button class="btn" type="submit">
+							<i class="align-middle" data-feather="search"></i>
+						</button>
+					</div>
+				</form>
+				<div class="navbar-collapse collapse">
+					<ul class="navbar-nav navbar-align">
+						<li class="nav-item dropdown" style="display:none">
+							<a class="nav-icon dropdown-toggle" href="#" id="alertsDropdown" data-bs-toggle="dropdown">
+								<div class="position-relative">
+									<i class="align-middle" data-feather="bell"></i>
+									<span class="indicator">4</span>
+								</div>
+							</a>
+							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="alertsDropdown">
+								<div class="dropdown-menu-header">
+									4 New Notifications
+								</div>
+								<div class="list-group">
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-danger" data-feather="alert-circle"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Update completed</div>
+												<div class="text-muted small mt-1">Restart server 12 to complete the update.</div>
+												<div class="text-muted small mt-1">30m ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-warning" data-feather="bell"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Lorem ipsum</div>
+												<div class="text-muted small mt-1">Aliquam ex eros, imperdiet vulputate hendrerit et.</div>
+												<div class="text-muted small mt-1">2h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-primary" data-feather="home"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">Login from 192.186.1.8</div>
+												<div class="text-muted small mt-1">5h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<i class="text-success" data-feather="user-plus"></i>
+											</div>
+											<div class="col-10">
+												<div class="text-dark">New connection</div>
+												<div class="text-muted small mt-1">Christina accepted your request.</div>
+												<div class="text-muted small mt-1">14h ago</div>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="dropdown-menu-footer">
+									<a href="#" class="text-muted">Show all notifications</a>
+								</div>
+							</div>
+						</li>
+						<li class="nav-item dropdown" style="display:none">
+							<a class="nav-icon dropdown-toggle" href="#" id="messagesDropdown" data-bs-toggle="dropdown">
+								<div class="position-relative">
+									<i class="align-middle" data-feather="message-square"></i>
+								</div>
+							</a>
+							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="messagesDropdown">
+								<div class="dropdown-menu-header">
+									<div class="position-relative">
+										4 New Messages
+									</div>
+								</div>
+								<div class="list-group">
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-5.jpg" class="avatar img-fluid rounded-circle" alt="Vanessa Tucker">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Vanessa Tucker</div>
+												<div class="text-muted small mt-1">Nam pretium turpis et arcu. Duis arcu tortor.</div>
+												<div class="text-muted small mt-1">15m ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-2.jpg" class="avatar img-fluid rounded-circle" alt="William Harris">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">William Harris</div>
+												<div class="text-muted small mt-1">Curabitur ligula sapien euismod vitae.</div>
+												<div class="text-muted small mt-1">2h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-4.jpg" class="avatar img-fluid rounded-circle" alt="Christina Mason">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Christina Mason</div>
+												<div class="text-muted small mt-1">Pellentesque auctor neque nec urna.</div>
+												<div class="text-muted small mt-1">4h ago</div>
+											</div>
+										</div>
+									</a>
+									<a href="#" class="list-group-item">
+										<div class="row g-0 align-items-center">
+											<div class="col-2">
+												<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar-3.jpg" class="avatar img-fluid rounded-circle" alt="Sharon Lessman">
+											</div>
+											<div class="col-10 ps-2">
+												<div class="text-dark">Sharon Lessman</div>
+												<div class="text-muted small mt-1">Aenean tellus metus, bibendum sed, posuere ac, mattis non.</div>
+												<div class="text-muted small mt-1">5h ago</div>
+											</div>
+										</div>
+									</a>
+								</div>
+								<div class="dropdown-menu-footer">
+									<a href="#" class="text-muted">Show all messages</a>
+								</div>
+							</div>
+						</li><li class="nav-item dropdown">
+							<a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
+								<i class="align-middle" data-feather="settings"></i>
+							</a>
+							<a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+								<img src="https://app.managed360view.com/360view/assets/img/avatars/avatar.jpg" class="avatar img-fluid rounded me-1" alt="Charles Hall" style="display:none"/> <span class="text-dark">Ahmad Kamal</span>
+							</a>
+							<div class="dropdown-menu dropdown-menu-end">
+								<!--<a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1" data-feather="user" style="display:none"></i> Profile</a>
+								<a class="dropdown-item" href="#" style="display:none"><i class="align-middle me-1" data-feather="pie-chart"></i> Analytics</a>
+								<div class="dropdown-divider" style="display:none"></div>
+								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="help-circle" style="display:none"></i> Help Center</a>
+								<div class="dropdown-divider style="display:none""></div>--><a class="dropdown-item" href="https://app.managed360view.com/360view/login_ldap.php?logout">Log out</a></div>
+						</li>
+					</ul>
+				</div>
+			</nav>
+
+			<main class="content">
+				<div class="container-fluid p-0">
+					
+					<div class="card mt-4">
+                        <div class="card-header text-white bg-primary">                     
+                            <h5 class="card-title mb-0">CDU-1.1</h5>
+                        </div>
+						<div class="card-body">
+						  <div class="row">
+
+
+
+														<div class="col-sm-12 col-md-6 col-lg-5">
+
+								<!-- Outer wrapper with rounded bottom corners -->
+								<div style="border:3px solid #072068; border-radius:5px 5px 0px 0px; overflow:hidden;">
+
+									<!-- Header bar outside the table -->
+									<div style="background:#072068; color:#ffffff; font-weight:bold; text-align:center; padding:8px 6px; letter-spacing:1px;">
+									ALARM
+									</div>
+
+									<div class="table-responsive" style="background:#b7e4f0;">
+										<!-- Table without borders, inside wrapper -->
+										<table style="width:100%; border-collapse:collapse; table-layout:fixed; border:none;">
+											<colgroup>
+												<col style="width:180px;">
+												<col style="width:60px;">
+												<!-- <col style="width:100px;"> -->
+											</colgroup>
+											<tbody>
+												<tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU 1.1 Data Hall</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Fluid Low Flow - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Pump Low Flow - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Critical Alarm - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Non Critical Alarm - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Fluid High Temp - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Connection Status - COV Log</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - CDU Mode - COV Log</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - P1 Inverter Fault - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - P2 Inverter Fault - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - P3 Inverter Fault - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Leak Unit - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Leak Under Floor - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Valve 1 Fault - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Valve 2 Fault - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Fluid High Temp - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Over Pressure - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Reservoir Tank Fluid Required - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Reservoir Tank Empty - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Fluid Quality - Turbidity Out of Limits - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Fluid Quality - Conductivity Out of Limits - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Below Dewpoint - COS Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Control Valve 1 Feedback - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Average Sec Diff Press - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Pump 2 Speed - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Total Sec Flow Rate - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Temprature Setpoint - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Supply Temp - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Return Temp - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Sec Diff Pressure - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Secondary Flowrate - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Room Relative Humidity - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Room Temperature - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Pump 3 Speed - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Supply Temp - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Return Temp - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Inlet Pressure - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Flowrate - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Primary Outlet Pressure - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Dew Point Temperature - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Control Valve 2 Feedback - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - Connection Status - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CDU - CDU Mode - Interval Alarm</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>CGK3A-PH2-CDU-1.1</td><td style='background:#28a745; color:#ffffff; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>NORMAL</td></tr>											</tbody>
+										</table>
+									</div>
+
+								</div>
+
+							</div>
+													
+						    <!-- col-2 -->
+						    <div class="col-sm-12 col-md-6 col-lg-3">
+						      <!-- Rack Image -->
+						      <div class="d-flex justify-content-center align-items-start h-100">
+						        <img src="assets/img/xdu.png" class="img-fluid w-100" alt="Rack" />
+						      </div>
+						    </div>
+						
+						
+							<!-- col-3 -->
+						    <div class="col-lg-4 mt-md-2 mt-lg-0">
+
+								<div style="border:3px solid #072068; border-radius:5px 5px 0px 0px; overflow:hidden;">
+									
+								<!-- Parameters -->
+									
+
+										
+									<!--  -->
+
+									<!-- Common header row -->
+									<!-- <div style="background:#072068; color:#ffffff; font-weight:bold; text-align:center; padding:8px 6px; letter-spacing:1px; border:3px solid #072068; border-bottom:none; width:fit-content; min-width:100%; margin-bottom:0; border-top-left-radius:5px; border-top-right-radius:5px;">
+									PARAMETER
+									</div> -->
+									<div style="background:#072068; color:#ffffff; font-weight:bold; text-align:center; padding:8px 6px; letter-spacing:1px;">
+									PARAMETER
+									</div>								
+
+									<!-- Flex container to place tables side by side -->
+									<div class="table-responsive">
+
+										<!-- Left Table -->
+										<!-- <table style="border-collapse:collapse; table-layout:fixed; border:3px solid #072068; border-top:none;">
+											<colgroup>
+											<col style="width:220px;">
+											<col style="width:65px;">
+											<col style="width:65px;">
+											</colgroup>
+											<tbody>
+											<tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Average Sec Diff Press</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>1.63</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Control Valve 1 Feedback</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>73.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Control Valve 2 Feedback</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>72.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Cooling Demand - CDU Cooling</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>0.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Dew Point Temperature</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>17.50</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Flowrate - FWS Flow</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>661.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>l/min</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Inlet Pressure</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>6.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Outlet Pressure</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>5.17</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Return Temp - FWS Temp Ret</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>31.60</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Supply Temp - FWS Temp Sup</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>27.40</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Pump 1 Speed</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>71.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr>											</tbody>
+										</table> -->
+
+										<!-- Right Table -->
+										<!-- <table style="border-collapse:collapse; table-layout:fixed; border:3px solid #072068; border-top:none;">
+											<colgroup>
+											<col style="width:200px;">
+											<col style="width:50px;">
+											<col style="width:50px;">
+											</colgroup>
+											<tbody>
+											<tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Pump 2 Speed</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>0.00</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>%</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Pump 3 Speed</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>71.00</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>%</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Room Relative Humidity</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>60.30</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>%RH</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Room Temperature</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>25.70</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>°C</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Sec Diff Pressure</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>1.62</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>bar</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Secondary Flowrate - TCS Flow</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>494.00</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>l/min</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Secondary Return Temp - TCS Temp Ret</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>33.20</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>°C</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Secondary Supply Temp - TCS Temp Sup</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>28.90</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>°C</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Temprature Setpoint</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>39.30</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>°C</td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'>Total Sec Flow Rate</td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>1017.00</td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'>l/min</td></tr>											</tbody>
+										</table> -->
+
+										<!-- Single Table -->
+										<table style="width:100%; border-collapse:collapse; table-layout:fixed; border:none;">
+											<colgroup>
+											<col style="width:220px;">
+											<col style="width:65px;">
+											<col style="width:65px;">
+											</colgroup>
+											<tbody>
+											<tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Average Sec Diff Press</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>1.63</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Control Valve 1 Feedback</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>73.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Control Valve 2 Feedback</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>72.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Cooling Demand - CDU Cooling</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>0.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Dew Point Temperature</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>17.50</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Flowrate - FWS Flow</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>661.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>l/min</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Inlet Pressure</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>6.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Outlet Pressure</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>5.17</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Return Temp - FWS Temp Ret</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>31.60</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Primary Supply Temp - FWS Temp Sup</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>27.40</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Pump 1 Speed</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>71.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Pump 2 Speed</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>0.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Pump 3 Speed</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>71.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Room Relative Humidity</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>60.30</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>%RH</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Room Temperature</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>25.70</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Sec Diff Pressure</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>1.62</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>bar</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Secondary Flowrate - TCS Flow</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>494.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>l/min</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Secondary Return Temp - TCS Temp Ret</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>33.20</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Secondary Supply Temp - TCS Temp Sup</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>28.90</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Temprature Setpoint</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>39.30</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>°C</b></td></tr><tr><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff;' class='td-heading'><b>Total Sec Flow Rate</b></td><td style='background:#b7e4f0; color:#000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>1017.00</b></td><td style='background:#71aff9; color:#000000; padding:6px 8px; border-bottom:1px solid #ffffff; text-align:center;' class='td-detail'><b>l/min</b></td></tr>											</tbody>
+										</table>									
+
+									</div>
+
+								</div>
+									
+
+						    </div>
+
+
+						
+						    <!-- col-4 -->
+						    <!--<div class="col-md-3">-->
+								
+								<!-- CDU General Information -->
+								<!--<table style="width:100%; border-collapse:collapse; table-layout:fixed; border:3px solid #072068;">
+								    <tr>
+								      <td colspan="2" style="background:#1f3a93; color:#ffffff; font-weight:bold; text-align:center; padding:8px 6px; letter-spacing:1px;">
+								        CDU GENERAL INFORMATION
+								      </td>
+								    </tr>
+								    <tr>
+								      <td colspan="2" style="background:#a4d2de; text-align:center; padding:6px;">
+										<div class="row">
+											<div class="col-6 text-left">
+												<button class="my-2 w-100" style="background:#072068; color:#fff; border:none; padding:4px 8px; font-size:11px; margin:0 2px; cursor:pointer; border-radius: 4px;"><i class="fa fa-area-chart me-2" aria-hidden="true"></i>Live Chart</button>
+											</div>
+											<div class="col-6 text-left">
+												<button class="my-2 w-100" style="background:#072068; color:#fff; border:none; padding:4px 8px; font-size:11px; margin:0 2px; cursor:pointer; border-radius: 4px;"><i class="fa fa-eercast me-2" aria-hidden="true"></i><a style='color:#fff !important;' href='cabinets.php?cabinetid=38329'>Edit</a></button>
+											</div>
+										</div>			    
+								      </td>
+								    </tr>
+								
+								    //Cooling Distribution Unit 
+								    <tr>
+								      <td colspan="2" style="background:#71aff9; color:#000000; padding:6px 8px; font-weight:bold; text-align:center;">
+								        COOLING DISTRIBUTION UNIT
+								      </td>
+								    </tr>
+									<tr>
+								      <td colspan="2" style="background:#1f3a93; color:#ffffff; font-weight:bold; text-align:center; padding:11px 6px;">
+										CDU-1.1									  </td>
+								    </tr>
+								    <tr>
+								      <td colspan="2" style="background:#e6f5f7; color:#000; padding:0px; text-align:left;">
+										<table class="w-100">
+											<tr>
+												<td style="background:#71aff9;padding: 0px 0px 0px 7px;">Manufacturer</td>
+												<td style="background:#a4d2de;padding: 0px 0px 0px 7px;">ABB - BDX CDU</td>
+											</tr>
+										</table>
+								      </td>
+								    </tr>
+								
+								</table>-->
+								
+						    <!--</div>-->
+						  </div>
+						</div>
+                    </div>
+					
+
+					
+					
+				</div>
+			</main>
+
+		</div>
+	</div>
+
+	<script>
+		$(document).ready(function() {
+		});
+	</script>
+</body>
+</html>
+```
+
+## Prometheus
+
+Format will be 
+
+```
+bdx_cdu{"name":"CDU_1.1", "type": "alarm", "Data Hall": "normal"} 1
+bdx_cdu{"name":"CDU_1.1", "type": "alarm", "Primary_Fluid_Low_Flow_COS_Alarm": "normal"} 1
+bdx_cdu{"name":"CDU_1.1", "type": "parameter", "Average_Sec_Diff_Press": "normal","metrix_type": "bar"} 1.63
+bdx_cdu{"name":"CDU_1.1", "type": "parameter", "Dew_Point_Temperature": "normal","metrix_type": "celcius"} 17.50
+```
