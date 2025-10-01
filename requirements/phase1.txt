@@ -1,0 +1,167 @@
+# BDX Exporter - Requirements Document
+
+## Project Overview
+
+Development of a BDX Exporter service written in Golang to expose monitoring metrics in Prometheus-compatible format. The exporter will collect data from HTTP endpoints and web scraping to provide temperature, humidity, and CDU status metrics.
+
+## Technical Stack
+
+- **Language**: Golang
+- **Web Framework**: Gin
+- **Scraping Library**: chromedp
+- **Export Format**: Prometheus metrics format
+- **Package**: github.com/reski-rukmantiyo/bdx-parser-prometheus
+
+## Functional Requirements
+
+### 1. Temperature & Humidity Monitoring
+
+The exporter shall collect temperature and humidity data from the 360View monitoring dashboard.
+
+**Data Source**:
+- URL: `https://app.managed360view.com/360view/trh_monitoring_dashboard.php`
+- Method: `POST`
+- Request Body: `action=inf`
+
+### 2. CDU Status Monitoring
+
+The exporter shall scrape CDU (Cooling Distribution Unit) status information from alarm and parameter tables.
+
+**Data Source**:
+- URL: `https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329`
+- Method: `GET`
+
+**Scraping Requirements**:
+- Use chromedp for browser automation
+- Extract data from:
+  - Alarm table
+  - Parameter table
+
+## Authentication & Session Management
+
+### Required Cookies
+
+Both endpoints require the following cookies:
+
+```
+sess_map=rcbqfqyrbtqtweyxzrsasyxfcfcssacawexwqaesxxdefbxvzyaydxrwyqxvvzrufbtdeauexytusqzewzddadqaadcrrabcftrftttbdyttusascfqzqsfcrqevytucbctrdtaxqwqyfuqcavzvfwzrswyszwwytyfswvqwazaxdedq
+
+PHPSESSID=ghv6gfuhing3knheq9hbnvaqh5
+```
+
+### Required Headers
+
+- `Referer`: `https://app.managed360view.com/360view/trh_monitoring_dashboard.php`
+
+## API Endpoints
+
+### Temperature & Humidity Endpoint
+
+```
+POST https://app.managed360view.com/360view/trh_monitoring_dashboard.php
+
+Headers:
+  Referer: https://app.managed360view.com/360view/trh_monitoring_dashboard.php
+  Cookie: sess_map=...; PHPSESSID=...
+
+Body:
+  action=inf
+```
+
+### CDU Status Endpoint
+
+```
+GET https://app.managed360view.com/360view/cdu_dashboard.php?cabinetid=38329
+
+Headers:
+  Cookie: sess_map=...; PHPSESSID=...
+```
+
+## Prometheus Metrics
+
+The exporter shall expose the following metrics:
+
+### Temperature & Humidity Metrics
+
+- `bdx_temperature_celsius` - Current temperature reading in Celsius
+- `bdx_humidity_percent` - Current humidity percentage
+
+### CDU Status Metrics
+
+- `bdx_cdu_alarm_status` - CDU alarm status (scraped from Alarm table)
+- `bdx_cdu_parameters` - CDU operational parameters (scraped from Parameter table)
+
+## Technical Implementation Details
+
+### Web Server
+
+- Implement using Gin web framework
+- Default metrics endpoint: `/metrics`
+- Health check endpoint: `/health`
+
+### Data Collection
+
+1. **HTTP Client**: For temperature and humidity data collection via POST request
+2. **chromedp**: For CDU dashboard scraping
+   - Navigate to CDU dashboard page
+   - Wait for table elements to load
+   - Extract data from Alarm table
+   - Extract data from Parameter table
+
+### Session Management
+
+- Store session cookies securely
+- Implement session refresh mechanism if needed
+- Handle authentication failures gracefully
+
+### Error Handling
+
+- Implement retry logic for failed HTTP requests
+- Log scraping errors
+- Return appropriate error metrics to Prometheus
+
+### Configuration
+
+- Configurable scraping intervals
+- Configurable timeout values
+- Environment variables for sensitive data (cookies, session tokens)
+
+## Non-Functional Requirements
+
+### Performance
+
+- Scraping interval: Configurable (recommended: 30-60 seconds)
+- Response time: < 5 seconds for /metrics endpoint
+
+### Reliability
+
+- Implement health checks
+- Graceful degradation if one data source fails
+- Logging for all operations
+
+### Security
+
+- Store credentials securely (environment variables or secrets management)
+- Use HTTPS for all external communications
+- Validate input parameters
+
+## Deployment Considerations
+
+- Dockerize the application
+- Resource requirements: Minimal (chromedp requires headless browser)
+- Port exposure: Default 8080 (configurable)
+
+## Dependencies
+
+```
+- github.com/gin-gonic/gin
+- github.com/chromedp/chromedp
+- github.com/prometheus/client_golang
+```
+
+## Future Enhancements
+
+- Support for multiple cabinet IDs
+- Dashboard for visualization
+- Alert rules configuration
+- Historical data storage
