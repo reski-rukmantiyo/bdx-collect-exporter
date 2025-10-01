@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,27 @@ type CDUParameter struct {
 	Item  string
 	Value float64
 	Unit  string
+}
+
+// LiquidCDU represents CDU liquid cooling data
+type LiquidCDU struct {
+	Name       string
+	Status     float64
+	FWSFlow    float64
+	FWSTempSup float64
+	FWSTempRet float64
+	TCSFlow    float64
+	TCSTempSup float64
+	TCSTempRet float64
+}
+
+// LiquidRack represents rack liquid cooling data
+type LiquidRack struct {
+	RackNumber         string
+	RackLiquidCooling  float64
+	TCSFlow            float64
+	TCSDeltaTemp       float64
+	TCSTempSupply      float64
 }
 
 // ScrapeCDU scrapes CDU data from the dashboard
@@ -179,6 +201,303 @@ func parseCDUHTML(html string) (string, []CDUAlarm, []CDUParameter) {
 	}
 
 	return name, alarms, params
+}
+
+// ScrapeLiquid scrapes liquid cooling data from the overview page
+func ScrapeLiquid(url, sessMap, phpSessID string) ([]LiquidCDU, []LiquidRack, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Create chromedp context
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
+	)
+
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(ctx, opts...)
+	defer cancelAlloc()
+
+	taskCtx, cancelTask := chromedp.NewContext(allocCtx)
+	defer cancelTask()
+
+	// Set cookies
+	cookies := []*network.CookieParam{
+		{
+			Name:   "sess_map",
+			Value:  sessMap,
+			Domain: "app.managed360view.com",
+			Path:   "/",
+		},
+		{
+			Name:   "PHPSESSID",
+			Value:  phpSessID,
+			Domain: "app.managed360view.com",
+			Path:   "/",
+		},
+	}
+
+	if err := chromedp.Run(taskCtx, network.SetCookies(cookies)); err != nil {
+		return nil, nil, fmt.Errorf("failed to set cookies: %v", err)
+	}
+
+	var pageHTML string
+
+	// Run tasks
+	err := chromedp.Run(taskCtx,
+		chromedp.Navigate(url),
+		chromedp.WaitVisible(`table`, chromedp.ByQuery), // Wait for tables to load
+		chromedp.Sleep(2*time.Second), // Additional wait
+		chromedp.OuterHTML("html", &pageHTML),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to scrape: %v", err)
+	}
+
+	cdus, racks := parseLiquidHTML(pageHTML)
+
+	return cdus, racks, nil
+}
+
+// parseLiquidHTML parses the liquid cooling HTML and extracts CDU and rack data
+func parseLiquidHTML(html string) ([]LiquidCDU, []LiquidRack) {
+	var cdus []LiquidCDU
+	var racks []LiquidRack
+
+	// Parse CDU tables
+	// Look for tables with "CGK3A-CL-1.04-CDU-" in the header
+	cduPattern := `CGK3A-CL-1\.04-CDU-(\d+\.\d+) STATUS`
+	cduRegex := regexp.MustCompile(cduPattern)
+	matches := cduRegex.FindAllStringSubmatch(html, -1)
+
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		cduName := "CDU_" + strings.ReplaceAll(match[1], ".", "_")
+
+		// Find the table start after the header
+		headerIndex := strings.Index(html, match[0])
+		if headerIndex == -1 {
+			continue
+		}
+
+		// Find the table after the header
+		tableStart := strings.Index(html[headerIndex:], "<table")
+		if tableStart == -1 {
+			continue
+		}
+		tableStart += headerIndex
+
+		tableEnd := strings.Index(html[tableStart:], "</table>")
+		if tableEnd == -1 {
+			continue
+		}
+		tableEnd += tableStart
+
+		tableHTML := html[tableStart:tableEnd]
+
+		cdu := parseCDUTable(tableHTML, cduName)
+		if cdu.Name != "" {
+			cdus = append(cdus, cdu)
+		}
+	}
+
+	// Parse rack tables
+	// Look for "ENERGY VALVE STATUS COMPARTMENT" tables
+	rackPattern := `ENERGY VALVE STATUS COMPARTMENT ([A-Z]+)`
+	rackRegex := regexp.MustCompile(rackPattern)
+	rackMatches := rackRegex.FindAllStringSubmatch(html, -1)
+
+	for _, match := range rackMatches {
+		if len(match) < 2 {
+			continue
+		}
+		compartment := match[1]
+
+		// Find the table start after the header
+		headerIndex := strings.Index(html, match[0])
+		if headerIndex == -1 {
+			continue
+		}
+
+		// Find the table after the header
+		tableStart := strings.Index(html[headerIndex:], "<table")
+		if tableStart == -1 {
+			continue
+		}
+		tableStart += headerIndex
+
+		tableEnd := strings.Index(html[tableStart:], "</table>")
+		if tableEnd == -1 {
+			continue
+		}
+		tableEnd += tableStart
+
+		tableHTML := html[tableStart:tableEnd]
+
+		rackData := parseRackTable(tableHTML, compartment)
+		racks = append(racks, rackData...)
+	}
+
+	return cdus, racks
+}
+
+// parseCDUTable parses a single CDU table
+func parseCDUTable(tableHTML, cduName string) LiquidCDU {
+	var cdu LiquidCDU
+	cdu.Name = cduName
+
+	// Find all <tr> rows
+	rows := strings.Split(tableHTML, "<tr")
+	for _, row := range rows {
+		if !strings.Contains(row, "<td") {
+			continue
+		}
+
+		// Split by <td
+		cells := strings.Split(row, "<td")
+		if len(cells) < 3 {
+			continue
+		}
+
+		// Extract label and value
+		label := extractText(cells[1])
+		valueStr := extractText(cells[2])
+
+		// Normalize units
+		valueStr = strings.ReplaceAll(valueStr, "I/min", "l/min")
+		valueStr = strings.ReplaceAll(valueStr, "°C", "C")
+
+		value, err := strconv.ParseFloat(strings.Fields(valueStr)[0], 64)
+		if err != nil {
+			continue
+		}
+
+		switch strings.ToLower(strings.ReplaceAll(label, " ", "_")) {
+		case "cdu_cooling":
+			cdu.Status = value
+		case "fws_flow":
+			cdu.FWSFlow = value
+		case "fws_temp_sup":
+			cdu.FWSTempSup = value
+		case "fws_temp_ret":
+			cdu.FWSTempRet = value
+		case "tcs_flow":
+			cdu.TCSFlow = value
+		case "tcs_temp_sup":
+			cdu.TCSTempSup = value
+		case "tcs_temp_ret":
+			cdu.TCSTempRet = value
+		}
+	}
+
+	return cdu
+}
+
+// parseRackTable parses a single rack table
+func parseRackTable(tableHTML, compartment string) []LiquidRack {
+	var racks []LiquidRack
+
+	// Find the header row to get rack numbers
+	headerStart := strings.Index(tableHTML, "<thead")
+	if headerStart == -1 {
+		return racks
+	}
+	headerEnd := strings.Index(tableHTML[headerStart:], "</thead>")
+	if headerEnd == -1 {
+		return racks
+	}
+	headerEnd += headerStart
+	headerHTML := tableHTML[headerStart:headerEnd]
+
+	// Extract rack numbers from header
+	var rackNumbers []string
+	thMatches := regexp.MustCompile(`<th[^>]*>([^<]+)</th>`).FindAllStringSubmatch(headerHTML, -1)
+	for _, match := range thMatches {
+		if len(match) > 1 && strings.Contains(match[1], "RACK ") {
+			rackNum := strings.TrimSpace(strings.ReplaceAll(match[1], "RACK ", ""))
+			rackNumbers = append(rackNumbers, rackNum)
+		}
+	}
+
+	// Find tbody
+	tbodyStart := strings.Index(tableHTML, "<tbody")
+	if tbodyStart == -1 {
+		return racks
+	}
+	tbodyEnd := strings.Index(tableHTML[tbodyStart:], "</tbody>")
+	if tbodyEnd == -1 {
+		return racks
+	}
+	tbodyEnd += tbodyStart
+	tbodyHTML := tableHTML[tbodyStart:tbodyEnd]
+
+	// Parse rows
+	rows := strings.Split(tbodyHTML, "<tr")
+	for _, row := range rows {
+		if !strings.Contains(row, "<td") {
+			continue
+		}
+
+		cells := strings.Split(row, "<td")
+		if len(cells) < 2 {
+			continue
+		}
+
+		label := extractText(cells[1])
+		label = strings.ToLower(strings.ReplaceAll(label, " ", "_"))
+
+		// Skip if not a data row
+		if label == "" {
+			continue
+		}
+
+		// Extract values for each rack
+		for i, rackNum := range rackNumbers {
+			if i+2 >= len(cells) {
+				continue
+			}
+			valueStr := extractText(cells[i+2])
+
+			// Normalize units
+			valueStr = strings.ReplaceAll(valueStr, "I/min", "l/min")
+			valueStr = strings.ReplaceAll(valueStr, "°C", "C")
+			valueStr = strings.ReplaceAll(valueStr, "kW", "kW")
+
+			value, err := strconv.ParseFloat(strings.Fields(valueStr)[0], 64)
+			if err != nil {
+				continue
+			}
+
+			// Find or create rack
+			var rack *LiquidRack
+			for j := range racks {
+				if racks[j].RackNumber == rackNum {
+					rack = &racks[j]
+					break
+				}
+			}
+			if rack == nil {
+				racks = append(racks, LiquidRack{RackNumber: rackNum})
+				rack = &racks[len(racks)-1]
+			}
+
+			switch label {
+			case "rack_liquid_cooling":
+				rack.RackLiquidCooling = value
+			case "tcs_flow":
+				rack.TCSFlow = value
+			case "tcs_delta_temp":
+				rack.TCSDeltaTemp = value
+			case "tcs_temp_supply":
+				rack.TCSTempSupply = value
+			}
+		}
+	}
+
+	return racks
 }
 
 // extractText extracts text from HTML cell

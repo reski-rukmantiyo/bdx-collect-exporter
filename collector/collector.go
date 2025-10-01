@@ -32,6 +32,16 @@ var (
 		Name: "bdx_cdu",
 		Help: "CDU metrics including alarms and parameters",
 	}, []string{"name", "type", "item", "status", "metrix_type"})
+
+	liquidGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "bdx_liquid",
+		Help: "Liquid cooling CDU metrics",
+	}, []string{"name", "type", "metrix_type"})
+
+	liquidRackGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "bdx_liquid_rack",
+		Help: "Liquid cooling rack metrics",
+	}, []string{"name", "type", "metrix_type"})
 )
 
 // SensorData represents the sensor data from the API
@@ -83,6 +93,13 @@ func (c *Collector) Collect() {
 		log.Printf("Failed to collect CDU data: %v", err)
 	} else {
 		log.Println("Successfully collected CDU data")
+	}
+
+	// Collect liquid cooling data
+	if err := c.collectLiquid(); err != nil {
+		log.Printf("Failed to collect liquid data: %v", err)
+	} else {
+		log.Println("Successfully collected liquid data")
 	}
 
 	log.Println("Data collection cycle completed")
@@ -206,5 +223,41 @@ func (c *Collector) collectCDU() error {
 	}
 
 	log.Printf("Total CDU data collected: %d successful scrapes, %d alarms, %d parameters", successfulScrapes, totalAlarms, totalParams)
+	return nil
+}
+
+// collectLiquid collects liquid cooling data
+func (c *Collector) collectLiquid() error {
+	// Reset gauges
+	liquidGauge.Reset()
+	liquidRackGauge.Reset()
+
+	cdus, racks, err := scraper.ScrapeLiquid(c.config.LiquidURL, c.config.SessMap, c.config.PHPSessID)
+	if err != nil {
+		return fmt.Errorf("failed to scrape liquid data: %w", err)
+	}
+
+	// Set CDU metrics
+	for _, cdu := range cdus {
+		liquidGauge.WithLabelValues(cdu.Name, "status", "percentage").Set(cdu.Status)
+		liquidGauge.WithLabelValues(cdu.Name, "fws_flow", "l/min").Set(cdu.FWSFlow)
+		liquidGauge.WithLabelValues(cdu.Name, "fws_temp_sup", "C").Set(cdu.FWSTempSup)
+		liquidGauge.WithLabelValues(cdu.Name, "fws_temp_ret", "C").Set(cdu.FWSTempRet)
+		liquidGauge.WithLabelValues(cdu.Name, "tcs_flow", "l/min").Set(cdu.TCSFlow)
+		liquidGauge.WithLabelValues(cdu.Name, "tcs_temp_sup", "C").Set(cdu.TCSTempSup)
+		liquidGauge.WithLabelValues(cdu.Name, "tcs_temp_ret", "C").Set(cdu.TCSTempRet)
+		log.Printf("Liquid CDU %s: status=%.2f%%, fws_flow=%.2f l/min, fws_temp_sup=%.2f°C, fws_temp_ret=%.2f°C, tcs_flow=%.2f l/min, tcs_temp_sup=%.2f°C, tcs_temp_ret=%.2f°C", cdu.Name, cdu.Status, cdu.FWSFlow, cdu.FWSTempSup, cdu.FWSTempRet, cdu.TCSFlow, cdu.TCSTempSup, cdu.TCSTempRet)
+	}
+
+	// Set rack metrics
+	for _, rack := range racks {
+		liquidRackGauge.WithLabelValues(rack.RackNumber, "rack_liquid_cooling", "kW").Set(rack.RackLiquidCooling)
+		liquidRackGauge.WithLabelValues(rack.RackNumber, "tcs_flow", "l/min").Set(rack.TCSFlow)
+		liquidRackGauge.WithLabelValues(rack.RackNumber, "tcs_delta_temp", "C").Set(rack.TCSDeltaTemp)
+		liquidRackGauge.WithLabelValues(rack.RackNumber, "tcs_temp_supply", "C").Set(rack.TCSTempSupply)
+		log.Printf("Liquid Rack %s: rack_liquid_cooling=%.2f kW, tcs_flow=%.2f l/min, tcs_delta_temp=%.2f°C, tcs_temp_supply=%.2f°C", rack.RackNumber, rack.RackLiquidCooling, rack.TCSFlow, rack.TCSDeltaTemp, rack.TCSTempSupply)
+	}
+
+	log.Printf("Collected liquid data: %d CDUs, %d racks", len(cdus), len(racks))
 	return nil
 }
