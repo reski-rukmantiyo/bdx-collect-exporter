@@ -270,6 +270,7 @@ Raw JSON → Parse → Extract (label, temp, rh) → Create Metrics with Labels
 - Configurable scraping intervals
 - Configurable timeout values
 - Environment variables for sensitive data (cookies, session tokens)
+- For all variables inside ./config/config.go to .env file
 
 ## Non-Functional Requirements
 
@@ -294,7 +295,8 @@ Raw JSON → Parse → Extract (label, temp, rh) → Create Metrics with Labels
 
 - Dockerize the application
 - Resource requirements: Minimal (chromedp requires headless browser)
-- Port exposure: Default 8080 (configurable)
+- Port exposure: Default 8080 (configurable) and can be adjustable to .env file
+- Health checkpoint by accessing /health url using GET
 
 ## Dependencies
 
